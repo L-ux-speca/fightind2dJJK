@@ -656,7 +656,7 @@ const CHARACTERS_DATA = [
 ];
 
 /* ==========================================================================
-   PEERJS NETWORKING (WITH GOOGLE STUN SERVERS FOR CROSS-BORDER P2P)
+   PEERJS NETWORKING (WITH GOOGLE STUN + OPENRELAY TURN SERVERS)
    ========================================================================== */
 const Net = {
   peer: null,
@@ -671,12 +671,22 @@ const Net = {
     this.isHost = true;
     const roomId = 'cf-' + Math.floor(1000 + Math.random() * 9000);
     
-    // Добавлены STUN-серверы для обхода NAT и связи с другими странами
+    // Интегрированы STUN и бесплатные TURN серверы для обхода европейских NAT
     this.peer = new Peer(roomId, {
       config: {
         iceServers: [
           { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' }
+          { urls: 'stun:stun1.l.google.com:19302' },
+          { 
+            urls: 'turn:openrelay.metered.ca:80', 
+            username: 'openrelayproject', 
+            credential: 'openrelayproject' 
+          },
+          { 
+            urls: 'turn:openrelay.metered.ca:443', 
+            username: 'openrelayproject', 
+            credential: 'openrelayproject' 
+          }
         ]
       }
     });
@@ -695,12 +705,22 @@ const Net = {
     this.isOnline = true;
     this.isHost = false;
     
-    // Добавлены STUN-серверы для клиента
+    // Интегрированы STUN и TURN серверы для клиента
     this.peer = new Peer(undefined, {
       config: {
         iceServers: [
           { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' }
+          { urls: 'stun:stun1.l.google.com:19302' },
+          { 
+            urls: 'turn:openrelay.metered.ca:80', 
+            username: 'openrelayproject', 
+            credential: 'openrelayproject' 
+          },
+          { 
+            urls: 'turn:openrelay.metered.ca:443', 
+            username: 'openrelayproject', 
+            credential: 'openrelayproject' 
+          }
         ]
       }
     });
@@ -808,7 +828,6 @@ const Input = {
   },
 
   getClientInputs() {
-    // Исправлены синтаксические ошибки и пропущенные скобки в управлении
     return {
       left: this.isDown('KeyA') || this.isDown('KeyH'),
       right: this.isDown('KeyD') || this.isDown('KeyK'),
@@ -1301,17 +1320,20 @@ class Fighter {
     }
   }
 
+  // Безопасный метод чекинга со всеми проверками на null (исправляет краши от Юзухи)
   executeChanneling(dt, opponent) {
     if (this.channelType === 'emerald_splash') {
       const px = this.x + this.facing * 30;
       const py = ARENA.floorY - 70;
       const reachLength = 210;
 
-      game.particles.push(new Particle(
-        px + (Math.random() - 0.5) * 8, py + (Math.random() - 0.5) * 8,
-        this.facing * (350 + Math.random() * 150), (Math.random() - 0.5) * 16,
-        '#00ffaa', Math.random() * 4 + 2, 0.3
-      ));
+      if (game && game.particles) {
+        game.particles.push(new Particle(
+          px + (Math.random() - 0.5) * 8, py + (Math.random() - 0.5) * 8,
+          this.facing * (350 + Math.random() * 150), (Math.random() - 0.5) * 16,
+          '#00ffaa', Math.random() * 4 + 2, 0.3
+        ));
+      }
 
       const beamBox = {
         x: this.facing === 1 ? px : px - reachLength,
@@ -1320,30 +1342,38 @@ class Fighter {
         h: 24
       };
 
-      if (game.bubbleBarrier && game.bubbleBarrier.active && game.bubbleBarrier.owner !== this && rectsIntersect(beamBox, game.bubbleBarrier.getBox())) {
-        game.bubbleBarrier.takeDamage(11 * dt);
-        return;
+      if (game && game.bubbleBarrier && game.bubbleBarrier.active && game.bubbleBarrier.owner !== this) {
+        if (typeof game.bubbleBarrier.getBox === 'function' && rectsIntersect(beamBox, game.bubbleBarrier.getBox())) {
+          game.bubbleBarrier.takeDamage(11 * dt);
+          return;
+        }
       }
 
-      if (game.barrierShip && game.barrierShip.alive && game.barrierShip.owner !== this && rectsIntersect(beamBox, game.barrierShip.getBox())) {
-        game.barrierShip.takeDamage(11 * dt);
-        return;
+      if (game && game.barrierShip && game.barrierShip.alive && game.barrierShip.owner !== this) {
+        if (typeof game.barrierShip.getBox === 'function' && rectsIntersect(beamBox, game.barrierShip.getBox())) {
+          game.barrierShip.takeDamage(11 * dt);
+          return;
+        }
       }
 
-      const tBox = opponent.getHitbox();
-      if (rectsIntersect(beamBox, tBox)) {
-        opponent.takeDamage(11 * dt, 4, this.facing, 0.8);
+      if (opponent && typeof opponent.getHitbox === 'function') {
+        const tBox = opponent.getHitbox();
+        if (rectsIntersect(beamBox, tBox)) {
+          opponent.takeDamage(11 * dt, 4, this.facing, 0.8);
+        }
       }
     } else if (this.channelType === 'bubble_cannon') {
       const px = this.x + this.facing * 30;
       const py = ARENA.floorY - 70;
       const reachLength = 400;
 
-      game.particles.push(new Particle(
-        px, py + (Math.random() - 0.5) * 15,
-        this.facing * (380 + Math.random() * 140), (Math.random() - 0.5) * 24,
-        '#38b6ff', Math.random() * 6 + 3, 0.4
-      ));
+      if (game && game.particles) {
+        game.particles.push(new Particle(
+          px, py + (Math.random() - 0.5) * 15,
+          this.facing * (380 + Math.random() * 140), (Math.random() - 0.5) * 24,
+          '#38b6ff', Math.random() * 6 + 3, 0.4
+        ));
+      }
 
       const beamBox = {
         x: this.facing === 1 ? px : px - reachLength,
@@ -1352,20 +1382,26 @@ class Fighter {
         h: 28
       };
 
-      if (game.bubbleBarrier && game.bubbleBarrier.active && game.bubbleBarrier.owner !== this && rectsIntersect(beamBox, game.bubbleBarrier.getBox())) {
-        game.bubbleBarrier.takeDamage(10 * dt);
-        return;
+      if (game && game.bubbleBarrier && game.bubbleBarrier.active && game.bubbleBarrier.owner !== this) {
+        if (typeof game.bubbleBarrier.getBox === 'function' && rectsIntersect(beamBox, game.bubbleBarrier.getBox())) {
+          game.bubbleBarrier.takeDamage(10 * dt);
+          return;
+        }
       }
 
-      if (game.barrierShip && game.barrierShip.alive && game.barrierShip.owner !== this && rectsIntersect(beamBox, game.barrierShip.getBox())) {
-        game.barrierShip.takeDamage(10 * dt);
-        return;
+      if (game && game.barrierShip && game.barrierShip.alive && game.barrierShip.owner !== this) {
+        if (typeof game.barrierShip.getBox === 'function' && rectsIntersect(beamBox, game.barrierShip.getBox())) {
+          game.barrierShip.takeDamage(10 * dt);
+          return;
+        }
       }
 
-      const tBox = opponent.getHitbox();
-      if (rectsIntersect(beamBox, tBox)) {
-        opponent.takeDamage(10 * dt);
-        opponent.vx = this.facing * 50;
+      if (opponent && typeof opponent.getHitbox === 'function') {
+        const tBox = opponent.getHitbox();
+        if (rectsIntersect(beamBox, tBox)) {
+          opponent.takeDamage(10 * dt);
+          opponent.vx = this.facing * 50;
+        }
       }
     }
   }
