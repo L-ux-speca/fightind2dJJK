@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>2D Fighter: Clash of Champions</title>
-  <!-- PeerJS CDN -->
+  <title>2D Fighter: Clash of Champions (Modular Engine)</title>
+  <!-- PeerJS CDN для сетевой игры по WebRTC -->
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <style>
     * {
@@ -39,7 +39,9 @@
       height: 100%;
     }
 
-    /* UI Screens */
+    /* ==========================================================================
+       СТИЛИ ИНТЕРФЕЙСА (ЭКРАНЫ И ЭЛЕМЕНТЫ)
+       ========================================================================== */
     .screen {
       position: absolute;
       top: 0;
@@ -54,12 +56,10 @@
       z-index: 10;
       transition: opacity 0.2s ease;
     }
-    .hidden {
-      display: none !important;
-    }
+    .hidden { display: none !important; }
 
     h1.title {
-      font-size: 50px;
+      font-size: 48px;
       text-transform: uppercase;
       letter-spacing: 4px;
       background: linear-gradient(45deg, #00d2ff, #3a7bd5, #00f2fe);
@@ -102,7 +102,7 @@
       transform: none !important;
     }
 
-    /* Lobby Cards */
+    /* Сетевое лобби */
     .lobby-card {
       background: #141726;
       border: 1px solid #2d3758;
@@ -119,11 +119,7 @@
       text-transform: uppercase;
       font-weight: bold;
     }
-    .room-id-box {
-      display: flex;
-      gap: 10px;
-      margin: 15px 0;
-    }
+    .room-id-box { display: flex; gap: 10px; margin: 15px 0; }
     .room-input {
       flex: 1;
       padding: 12px 15px;
@@ -136,38 +132,12 @@
       outline: none;
       text-align: center;
     }
-    .room-input:focus {
-      border-color: #00d2ff;
-      box-shadow: 0 0 10px rgba(0,210,255,0.3);
-    }
-    .status-text {
-      font-size: 14px;
-      color: #9cb3d3;
-      margin: 10px 0 15px;
-      min-height: 20px;
-    }
+    .status-text { font-size: 14px; color: #9cb3d3; margin: 10px 0 15px; min-height: 20px; }
 
-    /* Character Select */
-    .char-select-wrap {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      width: 92%;
-    }
-    .select-title {
-      font-size: 26px;
-      margin-bottom: 16px;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      color: #00d2ff;
-    }
-    .roster-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 18px;
-      width: 100%;
-      max-width: 950px;
-    }
+    /* Экран выбора бойцов */
+    .char-select-wrap { display: flex; flex-direction: column; align-items: center; width: 92%; }
+    .select-title { font-size: 26px; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 2px; color: #00d2ff; }
+    .roster-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; width: 100%; max-width: 950px; }
     .char-card {
       background: #151928;
       border: 2px solid #2a3352;
@@ -178,196 +148,47 @@
       transition: all 0.25s;
       position: relative;
     }
-    .char-card:hover {
-      border-color: #00d2ff;
-      transform: translateY(-4px);
-      background: #1b2137;
-    }
-    .char-card.selected-p1 {
-      border-color: #00e5ff;
-      box-shadow: 0 0 15px #00e5ff;
-    }
-    .char-card.selected-p2 {
-      border-color: #ff3366;
-      box-shadow: 0 0 15px #ff3366;
-    }
-    .badge-tag {
-      position: absolute;
-      top: -10px;
-      font-size: 11px;
-      font-weight: bold;
-      padding: 2px 8px;
-      border-radius: 4px;
-    }
+    .char-card:hover { border-color: #00d2ff; transform: translateY(-4px); background: #1b2137; }
+    .char-card.selected-p1 { border-color: #00e5ff; box-shadow: 0 0 15px #00e5ff; }
+    .char-card.selected-p2 { border-color: #ff3366; box-shadow: 0 0 15px #ff3366; }
+    .badge-tag { position: absolute; top: -10px; font-size: 11px; font-weight: bold; padding: 2px 8px; border-radius: 4px; }
     .badge-p1 { left: 10px; background: #00e5ff; color: #000; }
     .badge-p2 { right: 10px; background: #ff3366; color: #fff; }
     .char-avatar {
-      width: 70px;
-      height: 70px;
-      margin: 0 auto 10px;
-      border-radius: 50%;
-      border: 2px solid #334;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 30px;
-      background: #0b0d17;
+      width: 70px; height: 70px; margin: 0 auto 10px; border-radius: 50%;
+      border: 2px solid #334; display: flex; align-items: center; justify-content: center;
+      font-size: 30px; background: #0b0d17;
     }
-    .char-name {
-      font-weight: bold;
-      font-size: 16px;
-      margin-bottom: 4px;
-    }
-    .char-stats {
-      font-size: 11px;
-      color: #8da2c0;
-      line-height: 1.4;
-      margin-top: 6px;
-      text-align: left;
-    }
+    .char-name { font-weight: bold; font-size: 16px; margin-bottom: 4px; }
+    .char-stats { font-size: 11px; color: #8da2c0; line-height: 1.4; margin-top: 6px; text-align: left; }
 
-    /* HUD */
-    #hud {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      z-index: 5;
-    }
-    .top-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      padding: 16px 26px;
-    }
-    .fighter-hud {
-      width: 420px;
-    }
-    .hud-name {
-      font-size: 17px;
-      font-weight: 900;
-      letter-spacing: 1px;
-      margin-bottom: 5px;
-      text-transform: uppercase;
-    }
+    /* Боевой HUD */
+    #hud { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
+    .top-bar { display: flex; justify-content: space-between; align-items: flex-start; padding: 16px 26px; }
+    .fighter-hud { width: 420px; }
+    .hud-name { font-size: 17px; font-weight: 900; letter-spacing: 1px; margin-bottom: 5px; text-transform: uppercase; }
     .p1-hud .hud-name { color: #00e5ff; text-align: left; }
     .p2-hud .hud-name { color: #ff3366; text-align: right; }
-    .bar-bg {
-      background: rgba(0,0,0,0.65);
-      border: 1px solid #444;
-      border-radius: 4px;
-      overflow: hidden;
-      margin-bottom: 5px;
-      height: 20px;
-      position: relative;
-    }
-    .hp-bar {
-      height: 100%;
-      transition: width 0.08s linear;
-    }
+    .bar-bg { background: rgba(0,0,0,0.65); border: 1px solid #444; border-radius: 4px; overflow: hidden; margin-bottom: 5px; height: 20px; position: relative; }
+    .hp-bar { height: 100%; transition: width 0.08s linear; }
     .p1-hud .hp-bar { background: linear-gradient(90deg, #00d2ff, #00ff88); }
     .p2-hud .hp-bar { background: linear-gradient(90deg, #ff0055, #ff7700); float: right; }
-    .pe-bar-bg {
-      height: 12px;
-      margin-bottom: 4px;
-    }
-    .pe-bar {
-      height: 100%;
-      background: linear-gradient(90deg, #9b51e0, #bb6bd9);
-      transition: width 0.08s linear;
-    }
+    .pe-bar-bg { height: 12px; margin-bottom: 4px; }
+    .pe-bar { height: 100%; background: linear-gradient(90deg, #9b51e0, #bb6bd9); transition: width 0.08s linear; }
     .p2-hud .pe-bar { float: right; }
-    .bar-value {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 11px;
-      font-weight: bold;
-      text-shadow: 1px 1px 2px #000;
-    }
-    .skills-cd-row {
-      display: flex;
-      gap: 6px;
-      font-size: 11px;
-      font-weight: bold;
-      margin-top: 4px;
-    }
-    .p2-hud .skills-cd-row {
-      justify-content: flex-end;
-    }
-    .cd-badge {
-      background: rgba(0,0,0,0.6);
-      border: 1px solid #445;
-      padding: 2px 7px;
-      border-radius: 4px;
-      color: #9cb3d3;
-    }
-    .cd-badge.ready {
-      color: #00ffaa;
-      border-color: #00aa66;
-    }
-    .timer-box {
-      font-size: 40px;
-      font-weight: 900;
-      background: rgba(0,0,0,0.8);
-      border: 2px solid #555;
-      border-radius: 8px;
-      padding: 2px 18px;
-      color: #ffdd00;
-      box-shadow: 0 0 15px rgba(255,221,0,0.3);
-    }
-    .network-badge {
-      position: absolute;
-      top: 6px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 11px;
-      background: rgba(0,229,255,0.2);
-      border: 1px solid #00e5ff;
-      color: #00e5ff;
-      padding: 2px 10px;
-      border-radius: 10px;
-    }
-    .controls-legend {
-      position: absolute;
-      bottom: 8px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 11px;
-      color: rgba(255,255,255,0.8);
-      background: rgba(0,0,0,0.85);
-      border: 1px solid #334;
-      padding: 5px 16px;
-      border-radius: 12px;
-      white-space: nowrap;
-    }
+    .bar-value { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; text-shadow: 1px 1px 2px #000; }
+    
+    .skills-cd-row { display: flex; gap: 6px; font-size: 11px; font-weight: bold; margin-top: 4px; }
+    .p2-hud .skills-cd-row { justify-content: flex-end; }
+    .cd-badge { background: rgba(0,0,0,0.6); border: 1px solid #445; padding: 2px 7px; border-radius: 4px; color: #9cb3d3; }
+    .cd-badge.ready { color: #00ffaa; border-color: #00aa66; }
 
-    .game-over-banner {
-      font-size: 46px;
-      font-weight: 900;
-      text-transform: uppercase;
-      letter-spacing: 3px;
-      margin-bottom: 20px;
-      text-shadow: 0 0 25px rgba(255,255,255,0.6);
-      text-align: center;
-      padding: 0 20px;
-    }
-    .help-modal {
-      width: 820px;
-      max-height: 480px;
-      overflow-y: auto;
-      background: #141724;
-      border: 1px solid #3a4779;
-      border-radius: 8px;
-      padding: 25px;
-    }
+    .timer-box { font-size: 40px; font-weight: 900; background: rgba(0,0,0,0.8); border: 2px solid #555; border-radius: 8px; padding: 2px 18px; color: #ffdd00; box-shadow: 0 0 15px rgba(255,221,0,0.3); }
+    .network-badge { position: absolute; top: 6px; left: 50%; transform: translateX(-50%); font-size: 11px; background: rgba(0,229,255,0.2); border: 1px solid #00e5ff; color: #00e5ff; padding: 2px 10px; border-radius: 10px; }
+    .controls-legend { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); font-size: 11px; color: rgba(255,255,255,0.8); background: rgba(0,0,0,0.85); border: 1px solid #334; padding: 5px 16px; border-radius: 12px; white-space: nowrap; }
+
+    .game-over-banner { font-size: 46px; font-weight: 900; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 20px; text-shadow: 0 0 25px rgba(255,255,255,0.6); text-align: center; padding: 0 20px; }
+    .help-modal { width: 820px; max-height: 480px; overflow-y: auto; background: #141724; border: 1px solid #3a4779; border-radius: 8px; padding: 25px; }
     .help-modal h3 { color: #00d2ff; margin: 15px 0 5px; }
     .help-modal p { font-size: 13px; color: #b3c2d8; line-height: 1.5; }
   </style>
@@ -383,72 +204,64 @@
     <div class="top-bar">
       <!-- P1 HUD -->
       <div class="fighter-hud p1-hud">
-        <div class="hud-name" id="p1-name">Yuzuha</div>
+        <div class="hud-name" id="p1-name">FIGHTER 1</div>
         <div class="bar-bg">
           <div class="hp-bar" id="p1-hp" style="width: 100%;"></div>
-          <div class="bar-value" id="p1-hp-val">120 / 120</div>
+          <div class="bar-value" id="p1-hp-val">0 / 0</div>
         </div>
         <div class="bar-bg pe-bar-bg">
           <div class="pe-bar" id="p1-pe" style="width: 100%;"></div>
-          <div class="bar-value" id="p1-pe-val">170 / 170</div>
+          <div class="bar-value" id="p1-pe-val">0 / 0</div>
         </div>
-        <div class="skills-cd-row" id="p1-cds">
-          <span class="cd-badge ready" id="p1-cd1">[1] ГОТОВ</span>
-          <span class="cd-badge ready" id="p1-cd2">[2] ГОТОВ</span>
-          <span class="cd-badge ready" id="p1-cd3">[3] ГОТОВ</span>
-        </div>
+        <div class="skills-cd-row" id="p1-cds"></div>
       </div>
 
       <div class="timer-box" id="match-timer">120</div>
 
       <!-- P2 HUD -->
       <div class="fighter-hud p2-hud">
-        <div class="hud-name" id="p2-name">Caesar</div>
+        <div class="hud-name" id="p2-name">FIGHTER 2</div>
         <div class="bar-bg">
           <div class="hp-bar" id="p2-hp" style="width: 100%;"></div>
-          <div class="bar-value" id="p2-hp-val">130 / 130</div>
+          <div class="bar-value" id="p2-hp-val">0 / 0</div>
         </div>
         <div class="bar-bg pe-bar-bg">
           <div class="pe-bar" id="p2-pe" style="width: 100%;"></div>
-          <div class="bar-value" id="p2-pe-val">70 / 70</div>
+          <div class="bar-value" id="p2-pe-val">0 / 0</div>
         </div>
-        <div class="skills-cd-row" id="p2-cds">
-          <span class="cd-badge ready" id="p2-cd1">[1] ГОТОВ</span>
-          <span class="cd-badge ready" id="p2-cd2">[2] ГОТОВ</span>
-          <span class="cd-badge ready" id="p2-cd3">[3] ГОТОВ</span>
-        </div>
+        <div class="skills-cd-row" id="p2-cds"></div>
       </div>
     </div>
     <div class="controls-legend" id="hud-controls-info">
-      A/D: Ход | W: Прыжок | S: Присед | Z/X: Рука/Нога (+2 ПЭ) | 1/2/3: Спецприемы || [ESC / 0: Прервать бой]
+      Управление: A/D (Ход), W (Прыжок), S (Присед), Z/X (Удары +2 ПЭ), 1/2/3 (Приемы) || [ESC / 0: Выход]
     </div>
   </div>
 
-  <!-- Screen 1: Main Menu -->
+  <!-- Экран 1: Главное Меню -->
   <div id="screen-menu" class="screen">
     <h1 class="title">Clash of Champions</h1>
-    <button class="menu-btn accent" onclick="openHostLobby()">Создать комнату</button>
-    <button class="menu-btn accent" onclick="openJoinLobby()">Присоединиться к комнате</button>
-    <button class="menu-btn" onclick="startSelection('cpu')">1 Игрок против ИИ</button>
-    <button class="menu-btn" onclick="startSelection('local')">2 Игрока (Один ПК)</button>
-    <button class="menu-btn" onclick="toggleScreen('screen-settings', true)">Справка и Баланс</button>
+    <button class="menu-btn accent" onclick="UI.openHostLobby()">Создать комнату</button>
+    <button class="menu-btn accent" onclick="UI.openJoinLobby()">Присоединиться к комнате</button>
+    <button class="menu-btn" onclick="UI.startSelection('cpu')">1 Игрок против ИИ</button>
+    <button class="menu-btn" onclick="UI.startSelection('local')">2 Игрока (Один ПК)</button>
+    <button class="menu-btn" onclick="UI.toggleScreen('screen-settings', true)">Справка и Баланс</button>
   </div>
 
-  <!-- Screen: Host Room Lobby -->
+  <!-- Экран: Создание Сетевой Комнаты -->
   <div id="screen-host" class="screen hidden">
     <div class="lobby-card">
       <div class="lobby-title">Создание комнаты</div>
       <p style="font-size: 13px; color: #aaa;">Отправьте этот ID сопернику для подключения:</p>
       <div class="room-id-box">
         <input type="text" id="host-room-id" class="room-input" readonly value="Генерация ID...">
-        <button class="menu-btn" style="width: 120px; margin: 0; padding: 10px;" onclick="copyHostId()">Копия</button>
+        <button class="menu-btn" style="width: 120px; margin: 0; padding: 10px;" onclick="UI.copyHostId()">Копия</button>
       </div>
       <div class="status-text" id="host-status">Ожидание подключения соперника...</div>
-      <button class="menu-btn" style="width: 100%; margin: 5px 0;" onclick="cancelNetworkLobby()">Отмена</button>
+      <button class="menu-btn" style="width: 100%; margin: 5px 0;" onclick="UI.cancelNetworkLobby()">Отмена</button>
     </div>
   </div>
 
-  <!-- Screen: Join Room Lobby -->
+  <!-- Экран: Вход в Комнату -->
   <div id="screen-join" class="screen hidden">
     <div class="lobby-card">
       <div class="lobby-title">Вход в комнату</div>
@@ -457,69 +270,49 @@
         <input type="text" id="join-room-id" class="room-input" placeholder="например: cf-7821">
       </div>
       <div class="status-text" id="join-status"></div>
-      <button class="menu-btn accent" style="width: 100%; margin: 5px 0;" onclick="connectToHost()">Подключиться</button>
-      <button class="menu-btn" style="width: 100%; margin: 5px 0;" onclick="cancelNetworkLobby()">Назад</button>
+      <button class="menu-btn accent" style="width: 100%; margin: 5px 0;" onclick="UI.connectToHost()">Подключиться</button>
+      <button class="menu-btn" style="width: 100%; margin: 5px 0;" onclick="UI.cancelNetworkLobby()">Назад</button>
     </div>
   </div>
 
-  <!-- Screen 2: Character Select -->
+  <!-- Экран 2: Выбор Персонажей -->
   <div id="screen-select" class="screen hidden">
     <div class="char-select-wrap">
       <div class="select-title" id="select-prompt">Выберите персонажа</div>
       <div class="roster-grid" id="roster"></div>
       <div style="margin-top: 25px; display: flex; gap: 15px;">
-        <button class="menu-btn" id="btn-confirm-fight" style="width: 180px;" onclick="confirmSelection()">В БОЙ!</button>
-        <button class="menu-btn" style="width: 180px; background: #333;" onclick="exitSelection()">Назад</button>
+        <button class="menu-btn" id="btn-confirm-fight" style="width: 180px;" onclick="UI.confirmSelection()">В БОЙ!</button>
+        <button class="menu-btn" style="width: 180px; background: #333;" onclick="UI.exitSelection()">Назад</button>
       </div>
     </div>
   </div>
 
-  <!-- Screen: Help / Rules -->
+  <!-- Экран: Справка (Генерируется динамически) -->
   <div id="screen-settings" class="screen hidden">
     <div class="help-modal">
       <h2 style="color: #fff; margin-bottom: 10px;">Баланс боя и правила приемов</h2>
-      <p><b>Энергия и удары:</b> Пассивная регенерация ПЭ составляет 0.5 ед/сек. Успешные обычные удары руками (Z) и ногами (X) восполняют <b>+2 ПЭ</b>.</p>
+      <p><b>Энергия и удары:</b> Пассивный прирост 0.5 ПЭ/сек. Обычные удары руками (Z) и ногами (X) восполняют <b>+2 ПЭ</b>.</p>
       <p><b>Защита от станлока:</b> После любого оглушения персонаж получает <b>1.5 секунды иммунитета</b> к повторному оглушению.</p>
-      <p><b>Уклонение приседанием:</b> Присед (S или Стрелка вниз) уменьшает высоту персонажа в 2 раза. Линейные атаки на уровне груди (Изумрудный Всплеск, Пузырьковая Пушка, Корабль-Таран) пролетают над ним.</p>
-      
-      <h3>1. Такахаси Юзуха (HP: 120 | ПЭ: 170 | Скорость: 10)</h3>
-      <p>• [1] Щупальце (20 ПЭ, КД 6с): бьет на 2м вперед, наносит 20 урона.<br>
-         • [2] Изумрудный всплеск (25 ПЭ, КД 8с): короткий поток кристаллов на 1.8с (210px). 0.8с оглушения, ~20 урона. Уклонение: присесть.<br>
-         • [3] Мимикрия (30 ПЭ, КД 8с): неуязвимость на 3 секунды.</p>
-
-      <h3>2. Цезарь Цеппели (HP: 130 | ПЭ: 70 | Скорость: 8)</h3>
-      <p>• [1] Пузырьковая Пушка (15 ПЭ, КД 6с): 2с поток пузырей. 20 урона суммарно, толкает врага.<br>
-         • [2] Пузырьковый Резак (12 ПЭ, КД 5с): клин пузырей на 2м. 18 урона + отброс на 4м.<br>
-         • [3] Пузырьковый Барьер (18 ПЭ, КД 8с): защитная сфера с 30 HP. Поглощает абсолютно все удары и снаряды противника, пока не лопнет!</p>
-
-      <h3>3. Арая Юору (HP: 100 | ПЭ: 170 | Скорость: 7)</h3>
-      <p>• [1] Пушки (15 ПЭ, КД 7с): корабль выпускает 7 ядер (по 3.5 урона, суммарно до 24.5 урона).<br>
-         • [2] Таран (22 ПЭ, КД 7с): корабль несется вперед со скоростью 16. 22 урона, 1.2с оглушения. Уклонение: присесть.<br>
-         • [3] Барьер (15 ПЭ, КД 8с): корабль-щит с 30 HP, поглощает урон и снаряды.</p>
-
-      <h3>4. Ляпис Исивара (HP: 120 | ПЭ: 170 | Скорость: 9)</h3>
-      <p>• [1] Орбиты (15 ПЭ, КД 6с): 2 сферы на 5с. 8 урона + отброс при касании.<br>
-         • [2] Рельсотрон (25 ПЭ, КД 7с): шар со скоростью 14. 25 урона + 5м отброса. Уклонение: прыжок!<br>
-         • [3] Притяжение (10 ПЭ, КД 5с): шар для телепортации. Двойной тап направления переносит к шару + 1с неуязвимости.</p>
-
-      <button class="menu-btn" style="margin-top: 20px; width: 100%;" onclick="toggleScreen('screen-settings', false); toggleScreen('screen-menu', true);">Закрыть</button>
+      <p><b>Уклонение приседанием:</b> Присед (S или J) уменьшает рост в 2 раза — линейные снаряды на уровне груди пролетают мимо.</p>
+      <div id="help-characters-content"></div>
+      <button class="menu-btn" style="margin-top: 20px; width: 100%;" onclick="UI.toggleScreen('screen-settings', false); UI.toggleScreen('screen-menu', true);">Закрыть</button>
     </div>
   </div>
 
-  <!-- Screen 4: Game Over -->
+  <!-- Экран 4: Конец Матча -->
   <div id="screen-gameover" class="screen hidden">
-    <div class="game-over-banner" id="winner-banner">ТАКАХАСИ ЮЗУХА ПОБЕДИЛА!</div>
+    <div class="game-over-banner" id="winner-banner">ПОБЕДА!</div>
     <div style="display: flex; gap: 20px;">
-      <button class="menu-btn" id="btn-rematch" onclick="restartMatch()">Реванш</button>
-      <button class="menu-btn" onclick="toggleScreen('screen-select', true); toggleScreen('screen-gameover', false);">Выбор Бойцов</button>
-      <button class="menu-btn" onclick="exitToMainMenu()">Главное Меню</button>
+      <button class="menu-btn" id="btn-rematch" onclick="UI.restartMatch()">Реванш</button>
+      <button class="menu-btn" onclick="UI.toggleScreen('screen-select', true); UI.toggleScreen('screen-gameover', false);">Выбор Бойцов</button>
+      <button class="menu-btn" onclick="UI.exitToMainMenu()">Главное Меню</button>
     </div>
   </div>
 </div>
 
 <script>
 /* ==========================================================================
-   AUDIO SYNTHESIZER
+   БЛОК 1: ЗВУКОВОЙ ДВИЖОК (WEB AUDIO API)
    ========================================================================== */
 const AudioSys = {
   ctx: null,
@@ -529,73 +322,112 @@ const AudioSys = {
       this.ctx = new AudioContext();
     }
   },
-  playHit() {
+  play(type) {
     if (!this.ctx) return;
+    const t = this.ctx.currentTime;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(140, this.ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(30, this.ctx.currentTime + 0.12);
-    gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.12);
     osc.connect(gain);
     gain.connect(this.ctx.destination);
-    osc.start();
-    osc.stop(this.ctx.currentTime + 0.13);
-  },
-  playBeam() {
-    if (!this.ctx) return;
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(440, this.ctx.currentTime);
-    osc.frequency.linearRampToValueAtTime(220, this.ctx.currentTime + 0.25);
-    gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.25);
-    osc.connect(gain);
-    gain.connect(this.ctx.destination);
-    osc.start();
-    osc.stop(this.ctx.currentTime + 0.26);
-  },
-  playExplode() {
-    if (!this.ctx) return;
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    osc.type = 'square';
-    osc.frequency.setValueAtTime(90, this.ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(20, this.ctx.currentTime + 0.35);
-    gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.35);
-    osc.connect(gain);
-    gain.connect(this.ctx.destination);
-    osc.start();
-    osc.stop(this.ctx.currentTime + 0.36);
-  },
-  playTeleport() {
-    if (!this.ctx) return;
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(300, this.ctx.currentTime);
-    osc.frequency.linearRampToValueAtTime(880, this.ctx.currentTime + 0.18);
-    gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.18);
-    osc.connect(gain);
-    gain.connect(this.ctx.destination);
-    osc.start();
-    osc.stop(this.ctx.currentTime + 0.19);
+
+    if (type === 'hit') {
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(140, t);
+      osc.frequency.exponentialRampToValueAtTime(30, t + 0.12);
+      gain.gain.setValueAtTime(0.3, t);
+      gain.gain.linearRampToValueAtTime(0.01, t + 0.12);
+      osc.start(); osc.stop(t + 0.13);
+    } else if (type === 'beam') {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(440, t);
+      osc.frequency.linearRampToValueAtTime(220, t + 0.25);
+      gain.gain.setValueAtTime(0.15, t);
+      gain.gain.linearRampToValueAtTime(0.01, t + 0.25);
+      osc.start(); osc.stop(t + 0.26);
+    } else if (type === 'explode') {
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(90, t);
+      osc.frequency.exponentialRampToValueAtTime(20, t + 0.35);
+      gain.gain.setValueAtTime(0.3, t);
+      gain.gain.linearRampToValueAtTime(0.01, t + 0.35);
+      osc.start(); osc.stop(t + 0.36);
+    } else if (type === 'teleport') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(300, t);
+      osc.frequency.linearRampToValueAtTime(880, t + 0.18);
+      gain.gain.setValueAtTime(0.2, t);
+      gain.gain.linearRampToValueAtTime(0.01, t + 0.18);
+      osc.start(); osc.stop(t + 0.19);
+    }
   }
 };
 
 /* ==========================================================================
-   ARENA & CONSTANTS
+   БЛОК 2: РЕГИСТР АРЕН (ARENAS REGISTRY)
    ========================================================================== */
-const ARENA = {
-  width: 1100,
-  height: 550,
-  floorY: 460
-};
+const ARENAS = [
+  {
+    id: 'cyber_arena',
+    name: 'Неоновая Киберарена',
+    width: 1100,
+    height: 550,
+    floorY: 460,
+    draw(ctx) {
+      const bgGrad = ctx.createLinearGradient(0, 0, 0, this.floorY);
+      bgGrad.addColorStop(0, '#090c17');
+      bgGrad.addColorStop(1, '#11172a');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, this.width, this.floorY);
 
+      ctx.strokeStyle = 'rgba(0, 210, 255, 0.05)';
+      ctx.lineWidth = 1;
+      for (let x = 0; x <= this.width; x += 55) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0); ctx.lineTo(x, this.floorY);
+        ctx.stroke();
+      }
+
+      ctx.fillStyle = 'rgba(0, 229, 255, 0.35)';
+      ctx.fillRect(0, 0, 4, this.floorY);
+      ctx.fillStyle = 'rgba(255, 51, 102, 0.35)';
+      ctx.fillRect(this.width - 4, 0, 4, this.floorY);
+
+      const floorGrad = ctx.createLinearGradient(0, this.floorY, 0, this.height);
+      floorGrad.addColorStop(0, '#151928');
+      floorGrad.addColorStop(1, '#080a12');
+      ctx.fillStyle = floorGrad;
+      ctx.fillRect(0, this.floorY, this.width, this.height - this.floorY);
+
+      ctx.strokeStyle = '#00e5ff';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(0, this.floorY); ctx.lineTo(this.width, this.floorY);
+      ctx.stroke();
+
+      ctx.strokeStyle = 'rgba(0, 229, 255, 0.1)';
+      ctx.lineWidth = 1;
+      for (let x = 30; x < this.width; x += 60) {
+        ctx.beginPath();
+        ctx.moveTo(x, this.floorY); ctx.lineTo(x - 30, this.height);
+        ctx.stroke();
+      }
+    }
+  }
+];
+
+let currentArena = ARENAS[0];
+
+/* ==========================================================================
+   БЛОК 3: ГРАММАТИЧЕСКИЙ ХЕЛПЕР
+   ========================================================================== */
+function getGenderWord(gender, maleWord, femaleWord) {
+  return gender === 'f' ? femaleWord : maleWord;
+}
+
+/* ==========================================================================
+   БЛОК 4: РЕГИСТР БОЙЦОВ И ИХ СПОСОБНОСТЕЙ
+   (Добавлено поле imgSrc для растрового спрайта персонажа)
+   ========================================================================== */
 const CHARACTERS_DATA = [
   {
     id: 'yuzuha',
@@ -609,7 +441,62 @@ const CHARACTERS_DATA = [
     maxPe: 170,
     speed: 10,
     punchDmg: 10,
-    kickDmg: 12
+    kickDmg: 12,
+    imgSrc: 'character_art.png', // Ссылка на спрайт бойца на GitHub / в проекте
+    skills: [
+      {
+        name: 'Щупальце',
+        cost: 20,
+        cd: 6.0,
+        desc: 'Бьет на 2м вперед, наносит 20 ед. урона.',
+        castMsg: 'ПРИЗВАЛА ЩУПАЛЬЦЕ!',
+        action(fighter) {
+          AudioSys.play('beam');
+          game.projectiles.push(new YuzuhaTentacle(fighter, fighter.facing));
+        }
+      },
+      {
+        name: 'Изумрудный всплеск',
+        cost: 25,
+        cd: 8.0,
+        desc: 'Поток кристаллов на 1.8 сек (210px). 0.8с оглушения, ~20 ед. урона.',
+        castMsg: 'ИЗУМРУДНЫЙ ВСПЛЕСК!',
+        action(fighter) {
+          fighter.channelTimer = 1.8;
+          fighter.channelSkill = this;
+          fighter.attackCooldown = 1.9;
+        },
+        channel(fighter, dt, opponent) {
+          const px = fighter.x + fighter.facing * 30;
+          const py = currentArena.floorY - 70;
+          const reach = 210;
+
+          game.particles.push(new Particle(
+            px + (Math.random() - 0.5) * 8, py + (Math.random() - 0.5) * 8,
+            fighter.facing * (350 + Math.random() * 150), (Math.random() - 0.5) * 16,
+            '#00ffaa', Math.random() * 4 + 2, 0.3
+          ));
+
+          const beamBox = { x: fighter.facing === 1 ? px : px - reach, y: py - 12, w: reach, h: 24 };
+          if (game.interceptDamage(beamBox, 11 * dt, fighter)) return;
+
+          if (opponent && rectsIntersect(beamBox, opponent.getHitbox())) {
+            opponent.takeDamage(11 * dt, 4, fighter.facing, 0.8);
+          }
+        }
+      },
+      {
+        name: 'Мимикрия',
+        cost: 30,
+        cd: 8.0,
+        desc: 'Полная неуязвимость и мерцание на 3 секунды.',
+        castMsg: 'ИСПОЛЬЗОВАЛА МИМИКРИЮ!',
+        action(fighter) {
+          fighter.invulnerableTimer = 3.0;
+          AudioSys.play('teleport');
+        }
+      }
+    ]
   },
   {
     id: 'caesar',
@@ -623,7 +510,63 @@ const CHARACTERS_DATA = [
     maxPe: 70,
     speed: 8,
     punchDmg: 12,
-    kickDmg: 14
+    kickDmg: 14,
+    skills: [
+      {
+        name: 'Пузырьковая Пушка',
+        cost: 15,
+        cd: 6.0,
+        desc: 'Поток пузырей на 2 сек. Суммарно 20 ед. урона, отталкивает врага.',
+        castMsg: 'ПУЗЫРЬКОВАЯ ПУШКА!',
+        action(fighter) {
+          fighter.channelTimer = 2.0;
+          fighter.channelSkill = this;
+          fighter.attackCooldown = 2.1;
+        },
+        channel(fighter, dt, opponent) {
+          const px = fighter.x + fighter.facing * 30;
+          const py = currentArena.floorY - 70;
+          const reach = 400;
+
+          game.particles.push(new Particle(
+            px, py + (Math.random() - 0.5) * 15,
+            fighter.facing * (380 + Math.random() * 140), (Math.random() - 0.5) * 24,
+            '#38b6ff', Math.random() * 6 + 3, 0.4
+          ));
+
+          const beamBox = { x: fighter.facing === 1 ? px : px - reach, y: py - 14, w: reach, h: 28 };
+          if (game.interceptDamage(beamBox, 10 * dt, fighter)) return;
+
+          if (opponent && rectsIntersect(beamBox, opponent.getHitbox())) {
+            opponent.takeDamage(10 * dt);
+            opponent.vx = fighter.facing * 50;
+          }
+        }
+      },
+      {
+        name: 'Пузырьковый Резак',
+        cost: 12,
+        cd: 5.0,
+        desc: 'Клин из пузырей. 18 урона и отброс врага на 4 метра.',
+        castMsg: 'ПУЗЫРЬКОВЫЙ РЕЗАК!',
+        action(fighter) {
+          AudioSys.play('beam');
+          game.projectiles.push(new BubbleCutter(fighter, fighter.facing));
+        }
+      },
+      {
+        name: 'Пузырьковый Барьер',
+        cost: 18,
+        cd: 8.0,
+        desc: 'Сфера с 30 HP. Перехватывает ВСЕ удары и снаряды, пока не лопнет.',
+        castMsg: 'СОЗДАЛ БАРЬЕР!',
+        action(fighter, opponent) {
+          AudioSys.play('beam');
+          fighter.isCrouching = true;
+          game.bubbleBarrier = new BubbleBarrier(fighter, opponent);
+        }
+      }
+    ]
   },
   {
     id: 'araya',
@@ -637,7 +580,42 @@ const CHARACTERS_DATA = [
     maxPe: 170,
     speed: 7,
     punchDmg: 10,
-    kickDmg: 10
+    kickDmg: 10,
+    skills: [
+      {
+        name: 'Пушки',
+        cost: 15,
+        cd: 7.0,
+        desc: 'Корабль производит 7 выстрелов ядрами по позиции противника.',
+        castMsg: 'ПРИЗВАЛА ПУШКИ!',
+        action(fighter, opponent) {
+          AudioSys.play('beam');
+          game.projectiles.push(new ArayaCannonShip(fighter, opponent));
+        }
+      },
+      {
+        name: 'Таран',
+        cost: 22,
+        cd: 7.0,
+        desc: 'Корабль мчит вперед. 22 урона, 1.2с оглушения. Можно присесть.',
+        castMsg: 'ПРИЗВАЛА ТАРАН!',
+        action(fighter) {
+          AudioSys.play('beam');
+          game.projectiles.push(new ArayaRamShip(fighter, fighter.facing));
+        }
+      },
+      {
+        name: 'Барьер',
+        cost: 15,
+        cd: 8.0,
+        desc: 'Призрачный корабль-щит с 30 HP. Поглощает атаки и снаряды.',
+        castMsg: 'ПРИЗВАЛА БАРЬЕР!',
+        action(fighter) {
+          AudioSys.play('beam');
+          game.barrierShip = new ArayaBarrierShip(fighter, fighter.facing);
+        }
+      }
+    ]
   },
   {
     id: 'lapis',
@@ -651,12 +629,49 @@ const CHARACTERS_DATA = [
     maxPe: 170,
     speed: 9,
     punchDmg: 10,
-    kickDmg: 14
+    kickDmg: 14,
+    skills: [
+      {
+        name: 'Орбиты',
+        cost: 15,
+        cd: 6.0,
+        desc: '2 защитные сферы вокруг. 8 ед. урона и отброс врага при касании.',
+        castMsg: 'ОРБИТЫ!',
+        action(fighter) {
+          AudioSys.play('beam');
+          game.projectiles.push(new LapisOrbits(fighter));
+        }
+      },
+      {
+        name: 'Рельсотрон',
+        cost: 25,
+        cd: 7.0,
+        desc: 'Мощный шар по низу. 25 урона, отброс на 5м. Можно перепрыгнуть!',
+        castMsg: 'РЕЛЬСОТРОН!',
+        action(fighter) {
+          fighter.channelTimer = 0.3;
+          AudioSys.play('explode');
+          game.projectiles.push(new RailgunBall(fighter, fighter.facing));
+        }
+      },
+      {
+        name: 'Притяжение',
+        cost: 10,
+        cd: 5.0,
+        desc: 'Шар притяжения. Двойной тап бега переносит к шару + 1с неуязвимости.',
+        castMsg: 'ШАР ПРИТЯЖЕНИЯ!',
+        action(fighter) {
+          AudioSys.play('beam');
+          fighter.activeAttractionBall = new AttractionBall(fighter, fighter.facing);
+          game.projectiles.push(fighter.activeAttractionBall);
+        }
+      }
+    ]
   }
 ];
 
 /* ==========================================================================
-   PEERJS NETWORKING (WITH GOOGLE STUN + OPENRELAY TURN SERVERS)
+   БЛОК 5: СЕТЕВОЙ МОДУЛЬ (PEERJS)
    ========================================================================== */
 const Net = {
   peer: null,
@@ -665,35 +680,27 @@ const Net = {
   isHost: false,
   remoteClientInputs: null,
 
+  iceConfig: {
+    config: {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+        { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' }
+      ]
+    }
+  },
+
   initHost(onOpen, onConnect, onError) {
     this.close();
     this.isOnline = true;
     this.isHost = true;
     const roomId = 'cf-' + Math.floor(1000 + Math.random() * 9000);
-    
-    // Интегрированы STUN и бесплатные TURN серверы для обхода европейских NAT
-    this.peer = new Peer(roomId, {
-      config: {
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' },
-          { 
-            urls: 'turn:openrelay.metered.ca:80', 
-            username: 'openrelayproject', 
-            credential: 'openrelayproject' 
-          },
-          { 
-            urls: 'turn:openrelay.metered.ca:443', 
-            username: 'openrelayproject', 
-            credential: 'openrelayproject' 
-          }
-        ]
-      }
-    });
+    this.peer = new Peer(roomId, this.iceConfig);
 
     this.peer.on('open', (id) => onOpen(id));
-    this.peer.on('connection', (connection) => {
-      this.conn = connection;
+    this.peer.on('connection', (c) => {
+      this.conn = c;
       this.setupHandlers();
       onConnect();
     });
@@ -704,26 +711,7 @@ const Net = {
     this.close();
     this.isOnline = true;
     this.isHost = false;
-    
-    // Интегрированы STUN и TURN серверы для клиента
-    this.peer = new Peer(undefined, {
-      config: {
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' },
-          { 
-            urls: 'turn:openrelay.metered.ca:80', 
-            username: 'openrelayproject', 
-            credential: 'openrelayproject' 
-          },
-          { 
-            urls: 'turn:openrelay.metered.ca:443', 
-            username: 'openrelayproject', 
-            credential: 'openrelayproject' 
-          }
-        ]
-      }
-    });
+    this.peer = new Peer(undefined, this.iceConfig);
 
     this.peer.on('open', () => {
       this.conn = this.peer.connect(roomId, { reliable: true });
@@ -731,14 +719,14 @@ const Net = {
       this.conn.on('open', () => onConnect());
       this.conn.on('error', (err) => onError(err.message || 'Ошибка подключения'));
     });
-    this.peer.on('error', (err) => onError('Комната не найдена: ' + roomId));
+    this.peer.on('error', () => onError('Комната не найдена: ' + roomId));
   },
 
   setupHandlers() {
     this.conn.on('data', (data) => this.handleData(data));
     this.conn.on('close', () => {
       alert('Сетевое соединение завершено!');
-      exitToMainMenu();
+      UI.exitToMainMenu();
     });
   },
 
@@ -750,7 +738,7 @@ const Net = {
     if (data.type === 'SELECT_CHAR') {
       if (this.isHost) game.p2ChoiceIndex = data.index;
       else game.p1ChoiceIndex = data.index;
-      game.renderRoster();
+      UI.renderRoster();
     } else if (data.type === 'START_GAME') {
       game.p1ChoiceIndex = data.p1;
       game.p2ChoiceIndex = data.p2;
@@ -759,16 +747,11 @@ const Net = {
       this.remoteClientInputs = data.inputs;
     } else if (data.type === 'STATE_SNAPSHOT') {
       if (!this.isHost) game.applyStateSnapshot(data.snapshot);
-    } else if (data.type === 'SOUND_EVENT') {
-      if (!this.isHost) {
-        if (data.sound === 'hit') AudioSys.playHit();
-        if (data.sound === 'beam') AudioSys.playBeam();
-        if (data.sound === 'explode') AudioSys.playExplode();
-        if (data.sound === 'teleport') AudioSys.playTeleport();
-      }
+    } else if (data.type === 'SOUND') {
+      if (!this.isHost) AudioSys.play(data.sound);
     } else if (data.type === 'REMATCH') {
       game.startMatch(false);
-    } else if (data.type === 'ABORT_MATCH') {
+    } else if (data.type === 'ABORT') {
       game.abortMatchToSelect(false);
     }
   },
@@ -783,7 +766,7 @@ const Net = {
 };
 
 /* ==========================================================================
-   INPUTS & EMERGENCY EXIT (ESC / 0)
+   БЛОК 6: ОБРАБОТКА ВВОДА И КЛАВИАТУРЫ
    ========================================================================== */
 const Input = {
   keys: {},
@@ -804,9 +787,7 @@ const Input = {
       if (!this.keys[e.code]) {
         const now = performance.now();
         const prev = this.lastTapTimes[e.code] || 0;
-        if (now - prev < 280) {
-          this.doubleTapDetected[e.code] = true;
-        }
+        if (now - prev < 280) this.doubleTapDetected[e.code] = true;
         this.lastTapTimes[e.code] = now;
       }
       this.keys[e.code] = true;
@@ -819,6 +800,7 @@ const Input = {
   },
 
   isDown(code) { return !!this.keys[code]; },
+
   consumeDoubleTap(code) {
     if (this.doubleTapDetected[code]) {
       this.doubleTapDetected[code] = false;
@@ -829,23 +811,25 @@ const Input = {
 
   getClientInputs() {
     return {
-      left: this.isDown('KeyA') || this.isDown('KeyH'),
-      right: this.isDown('KeyD') || this.isDown('KeyK'),
-      jump: this.isDown('KeyW') || this.isDown('KeyU'),
-      crouch: this.isDown('KeyS') || this.isDown('KeyJ'),
-      punch: this.isDown('KeyZ') || this.isDown('KeyN'),
-      kick: this.isDown('KeyX') || this.isDown('KeyM'),
+      left: this.isDown('KeyA') || this.isDown('KeyH') || this.isDown('ArrowLeft'),
+      right: this.isDown('KeyD') || this.isDown('KeyK') || this.isDown('ArrowRight'),
+      jump: this.isDown('KeyW') || this.isDown('KeyU') || this.isDown('ArrowUp'),
+      crouch: this.isDown('KeyS') || this.isDown('KeyJ') || this.isDown('ArrowDown'),
+      punch: this.isDown('KeyZ') || this.isDown('KeyN') || this.isDown('Numpad1'),
+      kick: this.isDown('KeyX') || this.isDown('KeyM') || this.isDown('Numpad2'),
       s1: this.isDown('Digit1') || this.isDown('Digit7'),
       s2: this.isDown('Digit2') || this.isDown('Digit8'),
       s3: this.isDown('Digit3') || this.isDown('Digit9'),
-      doubleTapMove: this.consumeDoubleTap('KeyA') || this.consumeDoubleTap('KeyD') || this.consumeDoubleTap('KeyH') || this.consumeDoubleTap('KeyK')
+      doubleTapMove: this.consumeDoubleTap('KeyA') || this.consumeDoubleTap('KeyD') || 
+                     this.consumeDoubleTap('KeyH') || this.consumeDoubleTap('KeyK') || 
+                     this.consumeDoubleTap('ArrowLeft') || this.consumeDoubleTap('ArrowRight')
     };
   }
 };
 Input.init();
 
 /* ==========================================================================
-   PARTICLES & TEXT
+   БЛОК 7: БАЗОВЫЕ ВИЗУАЛЬНЫЕ ЭЛЕМЕНТЫ (ЧАСТИЦЫ И ТЕКСТ)
    ========================================================================== */
 class Particle {
   constructor(x, y, vx, vy, color, size, life) {
@@ -880,7 +864,8 @@ class FloatingText {
 }
 
 /* ==========================================================================
-   FIGHTER CLASS
+   БЛОК 8: КЛАСС БОЙЦА (FIGHTER CLASS)
+   (Интегрирована поддержка отрисовки растровых спрайтов под высоту 94px)
    ========================================================================== */
 class Fighter {
   constructor(data, isP2 = false, isCpu = false) {
@@ -894,9 +879,9 @@ class Fighter {
     this.pe = data.maxPe;
 
     this.width = 46;
-    this.baseHeight = 94;
+    this.baseHeight = 94; // Базовая высота персонажа
     this.x = isP2 ? 850 : 250;
-    this.y = ARENA.floorY;
+    this.y = currentArena.floorY;
     this.vx = 0;
     this.vy = 0;
     this.facing = isP2 ? -1 : 1;
@@ -906,14 +891,15 @@ class Fighter {
     this.stunTimer = 0;
     this.stunImmunityTimer = 0;
     this.invulnerableTimer = 0;
+
     this.channelTimer = 0;
-    this.channelType = null;
+    this.channelSkill = null;
 
-    this.cooldowns = { s1: 0, s2: 0, s3: 0 };
-
+    this.cooldowns = [0, 0, 0];
     this.activeAttack = null;
     this.attackCooldown = 0;
     this.activeAttractionBall = null;
+    this.customImg = null; // Кэш для HTMLImageElement спрайта
   }
 
   getHitbox() {
@@ -928,15 +914,14 @@ class Fighter {
 
   takeDamage(dmg, knockback = 0, dir = 0, stun = 0) {
     if (this.invulnerableTimer > 0) {
-      const invWord = this.data.gender === 'f' ? 'НЕУЯЗВИМА' : 'НЕУЯЗВИМ';
-      game.addText(invWord, this.x, this.y - this.baseHeight - 10, '#ffff00');
+      game.addText(getGenderWord(this.data.gender, 'НЕУЯЗВИМ', 'НЕУЯЗВИМА'), this.x, this.y - this.baseHeight - 10, '#ffff00');
       return false;
     }
 
     this.hp = Math.max(0, this.hp - dmg);
     game.addText(`-${Math.round(dmg)}`, this.x, this.y - this.baseHeight * 0.6, '#ff3344');
-    AudioSys.playHit();
-    if (Net.isOnline && Net.isHost) Net.send({ type: 'SOUND_EVENT', sound: 'hit' });
+    AudioSys.play('hit');
+    if (Net.isOnline && Net.isHost) Net.send({ type: 'SOUND', sound: 'hit' });
 
     for (let i = 0; i < 7; i++) {
       game.particles.push(new Particle(
@@ -946,16 +931,13 @@ class Fighter {
       ));
     }
 
-    if (knockback !== 0) {
-      this.vx = dir * (knockback * 4.2);
-    }
+    if (knockback !== 0) this.vx = dir * (knockback * 4.2);
 
     if (stun > 0) {
       if (this.stunImmunityTimer <= 0) {
         this.stunTimer = Math.max(this.stunTimer, stun);
         this.stunImmunityTimer = stun + 1.5;
-        const stunWord = this.data.gender === 'f' ? 'ОГЛУШЕНА!' : 'ОГЛУШЕН!';
-        game.addText(stunWord, this.x, this.y - this.baseHeight - 20, '#ff9900');
+        game.addText(getGenderWord(this.data.gender, 'ОГЛУШЕН!', 'ОГЛУШЕНА!'), this.x, this.y - this.baseHeight - 20, '#ff9900');
       } else {
         game.addText('АНТИСТАН', this.x, this.y - this.baseHeight - 20, '#60a5fa');
       }
@@ -969,9 +951,9 @@ class Fighter {
     if (this.stunImmunityTimer > 0) this.stunImmunityTimer -= dt;
     if (this.attackCooldown > 0) this.attackCooldown -= dt;
 
-    if (this.cooldowns.s1 > 0) this.cooldowns.s1 -= dt;
-    if (this.cooldowns.s2 > 0) this.cooldowns.s2 -= dt;
-    if (this.cooldowns.s3 > 0) this.cooldowns.s3 -= dt;
+    for (let i = 0; i < 3; i++) {
+      if (this.cooldowns[i] > 0) this.cooldowns[i] -= dt;
+    }
 
     if (this.pe < this.maxPe) this.pe = Math.min(this.maxPe, this.pe + 0.5 * dt);
 
@@ -979,8 +961,10 @@ class Fighter {
       this.channelTimer -= dt;
       this.vx = 0;
       this.isCrouching = false;
-      this.executeChanneling(dt, opponent);
-      if (this.channelTimer <= 0) this.channelType = null;
+      if (this.channelSkill && typeof this.channelSkill.channel === 'function') {
+        this.channelSkill.channel(this, dt, opponent);
+      }
+      if (this.channelTimer <= 0) this.channelSkill = null;
     }
 
     if (this.activeAttack) {
@@ -990,21 +974,21 @@ class Fighter {
     }
 
     if (this.stunTimer <= 0 && this.channelTimer <= 0) {
-      if (Net.isOnline && this.isP2) this.handleNetworkP2Input(dt, opponent);
+      if (Net.isOnline && this.isP2) this.handleNetworkInput(dt, opponent);
       else if (this.isCpu) this.updateAI(dt, opponent);
-      else this.handlePlayerInput(dt, opponent);
+      else this.handleLocalInput(dt, opponent);
     }
 
     if (!this.isGrounded) {
       this.vy += 1200 * dt;
       this.y += this.vy * dt;
-      if (this.y >= ARENA.floorY) {
-        this.y = ARENA.floorY;
+      if (this.y >= currentArena.floorY) {
+        this.y = currentArena.floorY;
         this.vy = 0;
         this.isGrounded = true;
       }
     } else {
-      this.y = ARENA.floorY;
+      this.y = currentArena.floorY;
     }
 
     this.x += this.vx * dt;
@@ -1012,9 +996,9 @@ class Fighter {
 
     const halfW = this.width / 2;
     if (this.x < halfW) this.x = halfW;
-    if (this.x > ARENA.width - halfW) this.x = ARENA.width - halfW;
+    if (this.x > currentArena.width - halfW) this.x = currentArena.width - halfW;
 
-    if (this.channelTimer <= 0 && this.activeAttack === null) {
+    if (this.channelTimer <= 0 && !this.activeAttack) {
       this.facing = this.x < opponent.x ? 1 : -1;
     }
 
@@ -1023,45 +1007,35 @@ class Fighter {
     }
   }
 
-  handlePlayerInput(dt, opponent) {
+  handleLocalInput(dt, opponent) {
     const isP1 = !this.isP2;
-    const moveSpeed = this.data.speed * 25;
+    const spd = this.data.speed * 25;
 
-    const kLeft = isP1 ? Input.isDown('KeyA') : Input.isDown('KeyH');
-    const kRight = isP1 ? Input.isDown('KeyD') : Input.isDown('KeyK');
-    const kJump = isP1 ? Input.isDown('KeyW') : Input.isDown('KeyU');
-    const kCrouch = isP1 ? Input.isDown('KeyS') : Input.isDown('KeyJ');
+    const kLeft = isP1 ? Input.isDown('KeyA') : (Input.isDown('KeyH') || Input.isDown('ArrowLeft'));
+    const kRight = isP1 ? Input.isDown('KeyD') : (Input.isDown('KeyK') || Input.isDown('ArrowRight'));
+    const kJump = isP1 ? Input.isDown('KeyW') : (Input.isDown('KeyU') || Input.isDown('ArrowUp'));
+    const kCrouch = isP1 ? Input.isDown('KeyS') : (Input.isDown('KeyJ') || Input.isDown('ArrowDown'));
 
-    const kPunch = isP1 ? Input.isDown('KeyZ') : Input.isDown('KeyN');
-    const kKick = isP1 ? Input.isDown('KeyX') : Input.isDown('KeyM');
+    const kPunch = isP1 ? Input.isDown('KeyZ') : (Input.isDown('KeyN') || Input.isDown('Numpad1'));
+    const kKick = isP1 ? Input.isDown('KeyX') : (Input.isDown('KeyM') || Input.isDown('Numpad2'));
 
-    const kS1 = isP1 ? Input.isDown('Digit1') : Input.isDown('Digit7');
-    const kS2 = isP1 ? Input.isDown('Digit2') : Input.isDown('Digit8');
-    const kS3 = isP1 ? Input.isDown('Digit3') : Input.isDown('Digit9');
+    const kS1 = isP1 ? Input.isDown('Digit1') : (Input.isDown('Digit7') || Input.isDown('Numpad4'));
+    const kS2 = isP1 ? Input.isDown('Digit2') : (Input.isDown('Digit8') || Input.isDown('Numpad5'));
+    const kS3 = isP1 ? Input.isDown('Digit3') : (Input.isDown('Digit9') || Input.isDown('Numpad6'));
 
     if (this.data.id === 'lapis' && this.activeAttractionBall && this.activeAttractionBall.alive) {
-      const doubleA = isP1 ? Input.consumeDoubleTap('KeyA') : Input.consumeDoubleTap('KeyH');
-      const doubleD = isP1 ? Input.consumeDoubleTap('KeyD') : Input.consumeDoubleTap('KeyK');
-      if (doubleA || doubleD) {
-        this.x = this.activeAttractionBall.x;
-        this.y = this.activeAttractionBall.y;
-        this.invulnerableTimer = 1.0;
-        AudioSys.playTeleport();
-        if (Net.isOnline && Net.isHost) Net.send({ type: 'SOUND_EVENT', sound: 'teleport' });
-        game.addText('ПРИТЯЖЕНИЕ!', this.x, this.y - this.baseHeight, '#ff00aa');
-      }
+      const dtMove = isP1 
+        ? (Input.consumeDoubleTap('KeyA') || Input.consumeDoubleTap('KeyD'))
+        : (Input.consumeDoubleTap('KeyH') || Input.consumeDoubleTap('KeyK') || Input.consumeDoubleTap('ArrowLeft') || Input.consumeDoubleTap('ArrowRight'));
+      if (dtMove) this.triggerLapisTeleport();
     }
 
-    if (kCrouch && this.isGrounded) {
-      this.isCrouching = true;
-      this.vx = 0;
-    } else {
-      this.isCrouching = false;
-    }
-
+    this.isCrouching = (kCrouch && this.isGrounded);
     if (!this.isCrouching) {
-      if (kLeft) this.vx = -moveSpeed;
-      else if (kRight) this.vx = moveSpeed;
+      if (kLeft) this.vx = -spd;
+      else if (kRight) this.vx = spd;
+    } else {
+      this.vx = 0;
     }
 
     if (kJump && this.isGrounded && !this.isCrouching) {
@@ -1072,36 +1046,27 @@ class Fighter {
     if (this.attackCooldown <= 0) {
       if (kPunch) this.startBasicAttack('punch');
       else if (kKick) this.startBasicAttack('kick');
-      else if (kS1) this.castSkill(1, opponent);
-      else if (kS2) this.castSkill(2, opponent);
-      else if (kS3) this.castSkill(3, opponent);
+      else if (kS1) this.castSkill(0, opponent);
+      else if (kS2) this.castSkill(1, opponent);
+      else if (kS3) this.castSkill(2, opponent);
     }
   }
 
-  handleNetworkP2Input(dt, opponent) {
+  handleNetworkInput(dt, opponent) {
     const inp = Net.remoteClientInputs;
     if (!inp) return;
-    const moveSpeed = this.data.speed * 25;
+    const spd = this.data.speed * 25;
 
     if (this.data.id === 'lapis' && this.activeAttractionBall && this.activeAttractionBall.alive && inp.doubleTapMove) {
-      this.x = this.activeAttractionBall.x;
-      this.y = this.activeAttractionBall.y;
-      this.invulnerableTimer = 1.0;
-      AudioSys.playTeleport();
-      Net.send({ type: 'SOUND_EVENT', sound: 'teleport' });
-      game.addText('ПРИТЯЖЕНИЕ!', this.x, this.y - this.baseHeight, '#ff00aa');
+      this.triggerLapisTeleport();
     }
 
-    if (inp.crouch && this.isGrounded) {
-      this.isCrouching = true;
-      this.vx = 0;
-    } else {
-      this.isCrouching = false;
-    }
-
+    this.isCrouching = (inp.crouch && this.isGrounded);
     if (!this.isCrouching) {
-      if (inp.left) this.vx = -moveSpeed;
-      else if (inp.right) this.vx = moveSpeed;
+      if (inp.left) this.vx = -spd;
+      else if (inp.right) this.vx = spd;
+    } else {
+      this.vx = 0;
     }
 
     if (inp.jump && this.isGrounded && !this.isCrouching) {
@@ -1112,17 +1077,26 @@ class Fighter {
     if (this.attackCooldown <= 0) {
       if (inp.punch) this.startBasicAttack('punch');
       else if (inp.kick) this.startBasicAttack('kick');
-      else if (inp.s1) this.castSkill(1, opponent);
-      else if (inp.s2) this.castSkill(2, opponent);
-      else if (inp.s3) this.castSkill(3, opponent);
+      else if (inp.s1) this.castSkill(0, opponent);
+      else if (inp.s2) this.castSkill(1, opponent);
+      else if (inp.s3) this.castSkill(2, opponent);
     }
+  }
+
+  triggerLapisTeleport() {
+    this.x = this.activeAttractionBall.x;
+    this.y = this.activeAttractionBall.y;
+    this.invulnerableTimer = 1.0;
+    AudioSys.play('teleport');
+    if (Net.isOnline && Net.isHost) Net.send({ type: 'SOUND', sound: 'teleport' });
+    game.addText('ПРИТЯЖЕНИЕ!', this.x, this.y - this.baseHeight, '#ff00aa');
   }
 
   updateAI(dt, opponent) {
     const dist = Math.abs(this.x - opponent.x);
-    const moveSpeed = this.data.speed * 25;
+    const spd = this.data.speed * 25;
 
-    let dangerBeam = game.projectiles.some(p => p.owner !== this && p.isDuckable && Math.abs(p.x - this.x) < 220);
+    const dangerBeam = game.projectiles.some(p => p.owner !== this && p.isDuckable && Math.abs(p.x - this.x) < 220);
     if (dangerBeam && this.isGrounded) {
       this.isCrouching = true;
       return;
@@ -1131,18 +1105,18 @@ class Fighter {
     }
 
     if (dist > 80) {
-      this.vx = (opponent.x > this.x ? 1 : -1) * moveSpeed;
+      this.vx = (opponent.x > this.x ? 1 : -1) * spd;
     } else {
       if (this.attackCooldown <= 0) {
         const rnd = Math.random();
         if (rnd < 0.45) this.startBasicAttack('punch');
         else if (rnd < 0.85) this.startBasicAttack('kick');
-        else this.castSkill(1, opponent);
+        else this.castSkill(0, opponent);
       }
     }
 
     if (dist > 180 && this.attackCooldown <= 0 && Math.random() < 0.035) {
-      this.castSkill(Math.floor(Math.random() * 3) + 1, opponent);
+      this.castSkill(Math.floor(Math.random() * 3), opponent);
     }
   }
 
@@ -1156,8 +1130,8 @@ class Fighter {
       hasHit: false
     };
     this.attackCooldown = 0.35;
-    AudioSys.playHit();
-    if (Net.isOnline && Net.isHost) Net.send({ type: 'SOUND_EVENT', sound: 'hit' });
+    AudioSys.play('hit');
+    if (Net.isOnline && Net.isHost) Net.send({ type: 'SOUND', sound: 'hit' });
   }
 
   checkMeleeCollision(target) {
@@ -1170,240 +1144,34 @@ class Fighter {
       h: 35
     };
 
-    if (game.bubbleBarrier && game.bubbleBarrier.active && game.bubbleBarrier.owner !== this) {
-      if (rectsIntersect(hitBox, game.bubbleBarrier.getBox())) {
-        game.bubbleBarrier.takeDamage(this.activeAttack.dmg);
-        this.activeAttack.hasHit = true;
-        this.pe = Math.min(this.maxPe, this.pe + 2);
-        return;
-      }
+    if (game.interceptDamage(hitBox, this.activeAttack.dmg, this)) {
+      this.activeAttack.hasHit = true;
+      this.pe = Math.min(this.maxPe, this.pe + 2);
+      return;
     }
 
-    if (game.barrierShip && game.barrierShip.alive && game.barrierShip.owner !== this) {
-      if (rectsIntersect(hitBox, game.barrierShip.getBox())) {
-        game.barrierShip.takeDamage(this.activeAttack.dmg);
-        this.activeAttack.hasHit = true;
-        this.pe = Math.min(this.maxPe, this.pe + 2);
-        return;
-      }
-    }
-
-    const tBox = target.getHitbox();
-    if (rectsIntersect(hitBox, tBox)) {
+    if (target && rectsIntersect(hitBox, target.getHitbox())) {
       target.takeDamage(this.activeAttack.dmg, this.activeAttack.knockback, this.facing);
       this.activeAttack.hasHit = true;
       this.pe = Math.min(this.maxPe, this.pe + 2);
     }
   }
 
-  castSkill(slot, opponent) {
-    const id = this.data.id;
+  castSkill(slotIndex, opponent) {
+    const skill = this.data.skills[slotIndex];
+    if (!skill) return;
 
-    if (id === 'yuzuha') {
-      if (slot === 1) {
-        if (this.pe < 20 || this.cooldowns.s1 > 0) return;
-        this.pe -= 20;
-        this.cooldowns.s1 = 6.0;
-        this.attackCooldown = 0.45;
-        AudioSys.playBeam();
-        if (Net.isOnline && Net.isHost) Net.send({ type: 'SOUND_EVENT', sound: 'beam' });
-        game.projectiles.push(new YuzuhaTentacle(this, this.facing));
-        game.addText('ПРИЗВАЛА ЩУПАЛЬЦЕ!', this.x, this.y - this.baseHeight, '#00ff88');
-      } else if (slot === 2) {
-        if (this.pe < 25 || this.cooldowns.s2 > 0) return;
-        this.pe -= 25;
-        this.cooldowns.s2 = 8.0;
-        this.channelTimer = 1.8;
-        this.channelType = 'emerald_splash';
-        this.attackCooldown = 1.9;
-        game.addText('ИЗУМРУДНЫЙ ВСПЛЕСК!', this.x, this.y - this.baseHeight, '#00ffaa');
-      } else if (slot === 3) {
-        if (this.pe < 30 || this.cooldowns.s3 > 0) return;
-        this.pe -= 30;
-        this.cooldowns.s3 = 8.0;
-        this.invulnerableTimer = 3.0;
-        this.attackCooldown = 0.5;
-        AudioSys.playTeleport();
-        if (Net.isOnline && Net.isHost) Net.send({ type: 'SOUND_EVENT', sound: 'teleport' });
-        game.addText('ИСПОЛЬЗОВАЛА МИМИКРИЮ!', this.x, this.y - this.baseHeight, '#ffffff');
-      }
-    } else if (id === 'caesar') {
-      if (slot === 1) {
-        if (this.pe < 15 || this.cooldowns.s1 > 0) return;
-        this.pe -= 15;
-        this.cooldowns.s1 = 6.0;
-        this.channelTimer = 2.0;
-        this.channelType = 'bubble_cannon';
-        this.attackCooldown = 2.1;
-        game.addText('ПУЗЫРЬКОВАЯ ПУШКА!', this.x, this.y - this.baseHeight, '#38b6ff');
-      } else if (slot === 2) {
-        if (this.pe < 12 || this.cooldowns.s2 > 0) return;
-        this.pe -= 12;
-        this.cooldowns.s2 = 5.0;
-        this.attackCooldown = 0.55;
-        AudioSys.playBeam();
-        if (Net.isOnline && Net.isHost) Net.send({ type: 'SOUND_EVENT', sound: 'beam' });
-        game.projectiles.push(new BubbleCutter(this, this.facing));
-        game.addText('ПУЗЫРЬКОВЫЙ РЕЗАК!', this.x, this.y - this.baseHeight, '#38b6ff');
-      } else if (slot === 3) {
-        if (this.pe < 18 || this.cooldowns.s3 > 0) return;
-        this.pe -= 18;
-        this.cooldowns.s3 = 8.0;
-        this.isCrouching = true;
-        this.attackCooldown = 0.5;
-        AudioSys.playBeam();
-        if (Net.isOnline && Net.isHost) Net.send({ type: 'SOUND_EVENT', sound: 'beam' });
-        game.bubbleBarrier = new BubbleBarrier(this, opponent);
-        game.addText('СОЗДАЛ БАРЬЕР!', this.x, this.y - this.baseHeight, '#00e5ff');
-      }
-    } else if (id === 'araya') {
-      if (slot === 1) {
-        if (this.pe < 15 || this.cooldowns.s1 > 0) return;
-        this.pe -= 15;
-        this.cooldowns.s1 = 7.0;
-        this.attackCooldown = 0.6;
-        AudioSys.playBeam();
-        if (Net.isOnline && Net.isHost) Net.send({ type: 'SOUND_EVENT', sound: 'beam' });
-        game.projectiles.push(new ArayaCannonShip(this, opponent));
-        game.addText('ПРИЗВАЛА ПУШКИ!', this.x, this.y - this.baseHeight, '#a855f7');
-      } else if (slot === 2) {
-        if (this.pe < 22 || this.cooldowns.s2 > 0) return;
-        this.pe -= 22;
-        this.cooldowns.s2 = 7.0;
-        this.attackCooldown = 0.6;
-        AudioSys.playBeam();
-        if (Net.isOnline && Net.isHost) Net.send({ type: 'SOUND_EVENT', sound: 'beam' });
-        game.projectiles.push(new ArayaRamShip(this, this.facing));
-        game.addText('ПРИЗВАЛА ТАРАН!', this.x, this.y - this.baseHeight, '#a855f7');
-      } else if (slot === 3) {
-        if (this.pe < 15 || this.cooldowns.s3 > 0) return;
-        this.pe -= 15;
-        this.cooldowns.s3 = 8.0;
-        this.attackCooldown = 0.6;
-        AudioSys.playBeam();
-        if (Net.isOnline && Net.isHost) Net.send({ type: 'SOUND_EVENT', sound: 'beam' });
-        game.barrierShip = new ArayaBarrierShip(this, this.facing);
-        game.addText('ПРИЗВАЛА БАРЬЕР!', this.x, this.y - this.baseHeight, '#a855f7');
-      }
-    } else if (id === 'lapis') {
-      if (slot === 1) {
-        if (this.pe < 15 || this.cooldowns.s1 > 0) return;
-        this.pe -= 15;
-        this.cooldowns.s1 = 6.0;
-        this.attackCooldown = 0.5;
-        AudioSys.playBeam();
-        if (Net.isOnline && Net.isHost) Net.send({ type: 'SOUND_EVENT', sound: 'beam' });
-        game.projectiles.push(new LapisOrbits(this));
-        game.addText('ОРБИТЫ!', this.x, this.y - this.baseHeight, '#f43f5e');
-      } else if (slot === 2) {
-        if (this.pe < 25 || this.cooldowns.s2 > 0) return;
-        this.pe -= 25;
-        this.cooldowns.s2 = 7.0;
-        this.channelTimer = 0.3;
-        this.channelType = 'railgun';
-        this.attackCooldown = 0.7;
-        AudioSys.playExplode();
-        if (Net.isOnline && Net.isHost) Net.send({ type: 'SOUND_EVENT', sound: 'explode' });
-        game.projectiles.push(new RailgunBall(this, this.facing));
-        game.addText('РЕЛЬСОТРОН!', this.x, this.y - this.baseHeight, '#f43f5e');
-      } else if (slot === 3) {
-        if (this.pe < 10 || this.cooldowns.s3 > 0) return;
-        this.pe -= 10;
-        this.cooldowns.s3 = 5.0;
-        this.attackCooldown = 0.4;
-        AudioSys.playBeam();
-        if (Net.isOnline && Net.isHost) Net.send({ type: 'SOUND_EVENT', sound: 'beam' });
-        this.activeAttractionBall = new AttractionBall(this, this.facing);
-        game.projectiles.push(this.activeAttractionBall);
-        game.addText('ШАР ПРИТЯЖЕНИЯ!', this.x, this.y - this.baseHeight, '#ff00aa');
-      }
+    if (this.pe < skill.cost || this.cooldowns[slotIndex] > 0) return;
+
+    this.pe -= skill.cost;
+    this.cooldowns[slotIndex] = skill.cd;
+    this.attackCooldown = 0.45;
+
+    if (skill.castMsg) {
+      game.addText(skill.castMsg, this.x, this.y - this.baseHeight, this.data.color);
     }
-  }
 
-  // Безопасный метод чекинга со всеми проверками на null (исправляет краши от Юзухи)
-  executeChanneling(dt, opponent) {
-    if (this.channelType === 'emerald_splash') {
-      const px = this.x + this.facing * 30;
-      const py = ARENA.floorY - 70;
-      const reachLength = 210;
-
-      if (game && game.particles) {
-        game.particles.push(new Particle(
-          px + (Math.random() - 0.5) * 8, py + (Math.random() - 0.5) * 8,
-          this.facing * (350 + Math.random() * 150), (Math.random() - 0.5) * 16,
-          '#00ffaa', Math.random() * 4 + 2, 0.3
-        ));
-      }
-
-      const beamBox = {
-        x: this.facing === 1 ? px : px - reachLength,
-        y: py - 12,
-        w: reachLength,
-        h: 24
-      };
-
-      if (game && game.bubbleBarrier && game.bubbleBarrier.active && game.bubbleBarrier.owner !== this) {
-        if (typeof game.bubbleBarrier.getBox === 'function' && rectsIntersect(beamBox, game.bubbleBarrier.getBox())) {
-          game.bubbleBarrier.takeDamage(11 * dt);
-          return;
-        }
-      }
-
-      if (game && game.barrierShip && game.barrierShip.alive && game.barrierShip.owner !== this) {
-        if (typeof game.barrierShip.getBox === 'function' && rectsIntersect(beamBox, game.barrierShip.getBox())) {
-          game.barrierShip.takeDamage(11 * dt);
-          return;
-        }
-      }
-
-      if (opponent && typeof opponent.getHitbox === 'function') {
-        const tBox = opponent.getHitbox();
-        if (rectsIntersect(beamBox, tBox)) {
-          opponent.takeDamage(11 * dt, 4, this.facing, 0.8);
-        }
-      }
-    } else if (this.channelType === 'bubble_cannon') {
-      const px = this.x + this.facing * 30;
-      const py = ARENA.floorY - 70;
-      const reachLength = 400;
-
-      if (game && game.particles) {
-        game.particles.push(new Particle(
-          px, py + (Math.random() - 0.5) * 15,
-          this.facing * (380 + Math.random() * 140), (Math.random() - 0.5) * 24,
-          '#38b6ff', Math.random() * 6 + 3, 0.4
-        ));
-      }
-
-      const beamBox = {
-        x: this.facing === 1 ? px : px - reachLength,
-        y: py - 14,
-        w: reachLength,
-        h: 28
-      };
-
-      if (game && game.bubbleBarrier && game.bubbleBarrier.active && game.bubbleBarrier.owner !== this) {
-        if (typeof game.bubbleBarrier.getBox === 'function' && rectsIntersect(beamBox, game.bubbleBarrier.getBox())) {
-          game.bubbleBarrier.takeDamage(10 * dt);
-          return;
-        }
-      }
-
-      if (game && game.barrierShip && game.barrierShip.alive && game.barrierShip.owner !== this) {
-        if (typeof game.barrierShip.getBox === 'function' && rectsIntersect(beamBox, game.barrierShip.getBox())) {
-          game.barrierShip.takeDamage(10 * dt);
-          return;
-        }
-      }
-
-      if (opponent && typeof opponent.getHitbox === 'function') {
-        const tBox = opponent.getHitbox();
-        if (rectsIntersect(beamBox, tBox)) {
-          opponent.takeDamage(10 * dt);
-          opponent.vx = this.facing * 50;
-        }
-      }
-    }
+    skill.action(this, opponent);
   }
 
   draw(ctx) {
@@ -1416,43 +1184,71 @@ class Fighter {
     const topY = this.y - curH;
     const halfW = this.width / 2;
 
+    // Тень на полу арены
     ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
     ctx.beginPath();
-    ctx.ellipse(this.x, ARENA.floorY, halfW + 4, 6, 0, 0, Math.PI * 2);
+    ctx.ellipse(this.x, currentArena.floorY, halfW + 4, 6, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.fillStyle = this.data.color;
-    ctx.strokeStyle = this.stunImmunityTimer > 0 ? '#60a5fa' : '#ffffff';
-    ctx.lineWidth = 3;
+    // ==========================================
+    // ОВЕРРАЙД ОТРИСОВКИ: РАСТРОВЫЙ СПРАЙТ ИЛИ КАПСУЛА
+    // ==========================================
+    if (this.data.imgSrc && !this.customImg) {
+      this.customImg = new Image();
+      this.customImg.src = this.data.imgSrc;
+    }
 
-    const r = 12;
-    ctx.beginPath();
-    ctx.moveTo(this.x - halfW + r, topY);
-    ctx.lineTo(this.x + halfW - r, topY);
-    ctx.quadraticCurveTo(this.x + halfW, topY, this.x + halfW, topY + r);
-    ctx.lineTo(this.x + halfW, this.y - r);
-    ctx.quadraticCurveTo(this.x + halfW, this.y, this.x + halfW - r, this.y);
-    ctx.lineTo(this.x - halfW + r, this.y);
-    ctx.quadraticCurveTo(this.x - halfW, this.y, this.x - halfW, this.y - r);
-    ctx.lineTo(this.x - halfW, topY + r);
-    ctx.quadraticCurveTo(this.x - halfW, topY, this.x - halfW + r, topY);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    if (this.customImg && this.customImg.complete) {
+      ctx.save();
+      if (this.facing === -1) {
+        ctx.translate(this.x, 0);
+        ctx.scale(-1, 1);
+        ctx.translate(-this.x, 0);
+      }
+      
+      const drawWidth = 75;
+      const drawHeight = this.baseHeight; // Жестко фиксировано в 94 пикселя
+      const drawX = this.x - drawWidth / 2;
+      const drawY = this.y - drawHeight;
 
-    ctx.fillStyle = '#0f1423';
-    const eyeX = this.facing === 1 ? this.x + 4 : this.x - 18;
-    ctx.fillRect(eyeX, topY + 14, 14, 7);
+      ctx.drawImage(this.customImg, drawX, drawY, drawWidth, drawHeight);
+      ctx.restore();
+    } else {
+      // Запасной векторный вариант (если картинка не загружена)
+      ctx.fillStyle = this.data.color;
+      ctx.strokeStyle = this.stunImmunityTimer > 0 ? '#60a5fa' : '#ffffff';
+      ctx.lineWidth = 3;
 
+      const r = 12;
+      ctx.beginPath();
+      ctx.moveTo(this.x - halfW + r, topY);
+      ctx.lineTo(this.x + halfW - r, topY);
+      ctx.quadraticCurveTo(this.x + halfW, topY, this.x + halfW, topY + r);
+      ctx.lineTo(this.x + halfW, this.y - r);
+      ctx.quadraticCurveTo(this.x + halfW, this.y, this.x + halfW - r, this.y);
+      ctx.lineTo(this.x - halfW + r, this.y);
+      ctx.quadraticCurveTo(this.x - halfW, this.y, this.x - halfW, this.y - r);
+      ctx.lineTo(this.x - halfW, topY + r);
+      ctx.quadraticCurveTo(this.x - halfW, topY, this.x - halfW + r, topY);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#0f1423';
+      const eyeX = this.facing === 1 ? this.x + 4 : this.x - 18;
+      ctx.fillRect(eyeX, topY + 14, 14, 7);
+    }
+
+    // Визуализация удара
     if (this.activeAttack) {
       ctx.fillStyle = '#ffff00';
       const ax = this.facing === 1 ? this.x + halfW : this.x - halfW - this.activeAttack.reach;
       const ay = this.activeAttack.type === 'punch' ? topY + curH * 0.35 : topY + curH * 0.65;
       ctx.fillRect(ax, ay, this.activeAttack.reach, 12);
     }
-
     ctx.restore();
 
+    // Плашка с именем прямо над бойцом
     ctx.save();
     ctx.font = 'bold 13px sans-serif';
     const tagText = `${this.isP2 ? 'P2' : 'P1'}: ${this.data.name}`;
@@ -1490,7 +1286,7 @@ class Fighter {
 }
 
 /* ==========================================================================
-   PROJECTILE ENTITIES
+   БЛОК 9: СНАРЯДЫ И ПРИЗЫВНЫЕ ОБЪЕКТЫ
    ========================================================================== */
 class YuzuhaTentacle {
   constructor(owner, dir) {
@@ -1498,7 +1294,7 @@ class YuzuhaTentacle {
     this.owner = owner;
     this.dir = dir;
     this.startX = owner.x;
-    this.y = ARENA.floorY - 50;
+    this.y = currentArena.floorY - 50;
     this.maxReach = 100;
     this.currentReach = 0;
     this.life = 3.0;
@@ -1509,32 +1305,16 @@ class YuzuhaTentacle {
   update(dt, opponent) {
     this.life -= dt;
     this.startX = this.owner.x;
-
     if (this.currentReach < this.maxReach) {
       this.currentReach = Math.min(this.maxReach, this.currentReach + 350 * dt);
     }
-
     if (!this.hasHit) {
-      const hitBox = {
-        x: this.dir === 1 ? this.startX : this.startX - this.currentReach,
-        y: this.y - 18,
-        w: this.currentReach,
-        h: 36
-      };
-
-      if (game.bubbleBarrier && game.bubbleBarrier.active && game.bubbleBarrier.owner !== this.owner && rectsIntersect(hitBox, game.bubbleBarrier.getBox())) {
-        game.bubbleBarrier.takeDamage(this.dmg);
+      const box = { x: this.dir === 1 ? this.startX : this.startX - this.currentReach, y: this.y - 18, w: this.currentReach, h: 36 };
+      if (game.interceptDamage(box, this.dmg, this.owner)) {
         this.hasHit = true;
         return;
       }
-
-      if (game.barrierShip && game.barrierShip.alive && game.barrierShip.owner !== this.owner && rectsIntersect(hitBox, game.barrierShip.getBox())) {
-        game.barrierShip.takeDamage(this.dmg);
-        this.hasHit = true;
-        return;
-      }
-
-      if (rectsIntersect(hitBox, opponent.getHitbox())) {
+      if (opponent && rectsIntersect(box, opponent.getHitbox())) {
         opponent.takeDamage(this.dmg, 20, this.dir);
         this.hasHit = true;
       }
@@ -1567,7 +1347,7 @@ class BubbleCutter {
     this.owner = owner;
     this.dir = dir;
     this.x = owner.x + dir * 30;
-    this.y = ARENA.floorY - 50;
+    this.y = currentArena.floorY - 50;
     this.vx = dir * 50;
     this.life = 2.0;
     this.dmg = 18;
@@ -1577,25 +1357,14 @@ class BubbleCutter {
   update(dt, opponent) {
     this.x += this.vx * dt;
     this.life -= dt;
-
     if (!this.hasHit) {
       const box = { x: this.x - 25, y: this.y - 25, w: 50, h: 50 };
-
-      if (game.bubbleBarrier && game.bubbleBarrier.active && game.bubbleBarrier.owner !== this.owner && rectsIntersect(box, game.bubbleBarrier.getBox())) {
-        game.bubbleBarrier.takeDamage(this.dmg);
+      if (game.interceptDamage(box, this.dmg, this.owner)) {
         this.alive = false;
         this.hasHit = true;
         return;
       }
-
-      if (game.barrierShip && game.barrierShip.alive && game.barrierShip.owner !== this.owner && rectsIntersect(box, game.barrierShip.getBox())) {
-        game.barrierShip.takeDamage(this.dmg);
-        this.alive = false;
-        this.hasHit = true;
-        return;
-      }
-
-      if (rectsIntersect(box, opponent.getHitbox())) {
+      if (opponent && rectsIntersect(box, opponent.getHitbox())) {
         opponent.takeDamage(this.dmg, 50, this.dir);
         this.hasHit = true;
         this.alive = false;
@@ -1622,7 +1391,7 @@ class BubbleBarrier {
   constructor(owner, opponent) {
     this.owner = owner;
     this.x = owner.x;
-    this.y = ARENA.floorY - 50;
+    this.y = currentArena.floorY - 50;
     this.radius = 75;
     this.hp = 30;
     this.active = true;
@@ -1631,20 +1400,15 @@ class BubbleBarrier {
     this.opponentTrappedInside = distOpponent <= this.radius;
   }
   getBox() {
-    return {
-      x: this.x - this.radius,
-      y: this.y - this.radius,
-      w: this.radius * 2,
-      h: this.radius * 2
-    };
+    return { x: this.x - this.radius, y: this.y - this.radius, w: this.radius * 2, h: this.radius * 2 };
   }
   takeDamage(dmg) {
     this.hp -= dmg;
     game.addText(`БАРЬЕР -${Math.round(dmg)}`, this.x, this.y - this.radius, '#00e5ff');
-    AudioSys.playHit();
+    AudioSys.play('hit');
     if (this.hp <= 0) {
       this.active = false;
-      AudioSys.playExplode();
+      AudioSys.play('explode');
       game.addText('БАРЬЕР ЛОПНУЛ!', this.x, this.y, '#00e5ff');
     }
   }
@@ -1691,7 +1455,7 @@ class ArayaCannonShip {
     this.owner = owner;
     this.target = target;
     this.x = owner.x;
-    this.y = ARENA.floorY - 140;
+    this.y = currentArena.floorY - 140;
     this.delay = 2.0;
     this.shotsFired = 0;
     this.shotTimer = 0;
@@ -1708,11 +1472,9 @@ class ArayaCannonShip {
       this.shotsFired++;
       const targetPos = { x: this.target.x, y: this.target.y - 45 };
       game.projectiles.push(new CannonBall(this.x, this.y, targetPos, this.owner));
-      AudioSys.playHit();
+      AudioSys.play('hit');
     }
-    if (this.shotsFired >= 7 && this.shotTimer <= 0) {
-      this.alive = false;
-    }
+    if (this.shotsFired >= 7 && this.shotTimer <= 0) this.alive = false;
   }
   draw(ctx) {
     ctx.save();
@@ -1721,17 +1483,12 @@ class ArayaCannonShip {
     ctx.strokeStyle = '#e9d5ff';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(-35, 10);
-    ctx.lineTo(35, 10);
-    ctx.lineTo(25, -15);
-    ctx.lineTo(-30, -15);
+    ctx.moveTo(-35, 10); ctx.lineTo(35, 10); ctx.lineTo(25, -15); ctx.lineTo(-30, -15);
     ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    ctx.fill(); ctx.stroke();
 
     ctx.beginPath();
-    ctx.moveTo(0, -15);
-    ctx.lineTo(0, -42);
+    ctx.moveTo(0, -15); ctx.lineTo(0, -42);
     ctx.stroke();
     ctx.fillStyle = '#fff';
     ctx.fillRect(-15, -40, 30, 20);
@@ -1757,22 +1514,14 @@ class CannonBall {
     this.x += this.vx * dt;
     this.y += this.vy * dt;
     this.life -= dt;
-
     const box = { x: this.x - 8, y: this.y - 8, w: 16, h: 16 };
 
-    if (game.bubbleBarrier && game.bubbleBarrier.active && game.bubbleBarrier.owner !== this.owner && rectsIntersect(box, game.bubbleBarrier.getBox())) {
-      game.bubbleBarrier.takeDamage(this.dmg);
+    if (game.interceptDamage(box, this.dmg, this.owner)) {
       this.alive = false;
       return;
     }
 
-    if (game.barrierShip && game.barrierShip.alive && game.barrierShip.owner !== this.owner && rectsIntersect(box, game.barrierShip.getBox())) {
-      game.barrierShip.takeDamage(this.dmg);
-      this.alive = false;
-      return;
-    }
-
-    if (rectsIntersect(box, opponent.getHitbox())) {
+    if (opponent && rectsIntersect(box, opponent.getHitbox())) {
       opponent.takeDamage(this.dmg, 8, this.vx > 0 ? 1 : -1);
       this.alive = false;
     }
@@ -1785,8 +1534,7 @@ class CannonBall {
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.arc(this.x, this.y, 8, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
+    ctx.fill(); ctx.stroke();
     ctx.restore();
   }
 }
@@ -1797,7 +1545,7 @@ class ArayaRamShip {
     this.owner = owner;
     this.dir = dir;
     this.x = owner.x + dir * 65;
-    this.y = ARENA.floorY - 70;
+    this.y = currentArena.floorY - 70;
     this.delay = 2.0;
     this.speed = 16 * 25;
     this.vx = 0;
@@ -1811,7 +1559,7 @@ class ArayaRamShip {
       this.delay -= dt;
       if (this.delay <= 0) {
         this.vx = this.dir * this.speed;
-        AudioSys.playExplode();
+        AudioSys.play('explode');
       }
       return;
     }
@@ -1819,25 +1567,18 @@ class ArayaRamShip {
     this.x += this.vx * dt;
     const box = { x: this.x - 40, y: this.y - 20, w: 80, h: 40 };
 
-    if (game.bubbleBarrier && game.bubbleBarrier.active && game.bubbleBarrier.owner !== this.owner && rectsIntersect(box, game.bubbleBarrier.getBox())) {
-      game.bubbleBarrier.takeDamage(this.dmg);
+    if (game.interceptDamage(box, this.dmg, this.owner)) {
       this.alive = false;
       return;
     }
 
-    if (game.barrierShip && game.barrierShip.alive && game.barrierShip.owner !== this.owner && rectsIntersect(box, game.barrierShip.getBox())) {
-      game.barrierShip.takeDamage(this.dmg);
-      this.alive = false;
-      return;
-    }
-
-    if (!this.hasHit && rectsIntersect(box, opponent.getHitbox())) {
+    if (!this.hasHit && opponent && rectsIntersect(box, opponent.getHitbox())) {
       opponent.takeDamage(this.dmg, 30, this.dir, 1.2);
       this.hasHit = true;
       this.alive = false;
     }
 
-    if (this.x < -100 || this.x > ARENA.width + 100) this.alive = false;
+    if (this.x < -100 || this.x > currentArena.width + 100) this.alive = false;
   }
   draw(ctx) {
     ctx.save();
@@ -1847,12 +1588,9 @@ class ArayaRamShip {
     ctx.strokeStyle = '#ffd700';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(-45, 18);
-    ctx.lineTo(45, 0);
-    ctx.lineTo(-45, -20);
+    ctx.moveTo(-45, 18); ctx.lineTo(45, 0); ctx.lineTo(-45, -20);
     ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    ctx.fill(); ctx.stroke();
     ctx.restore();
   }
 }
@@ -1861,7 +1599,7 @@ class ArayaBarrierShip {
   constructor(owner, dir) {
     this.owner = owner;
     this.x = owner.x + dir * 75;
-    this.y = ARENA.floorY - 45;
+    this.y = currentArena.floorY - 45;
     this.hp = 30;
     this.alive = true;
   }
@@ -1871,10 +1609,10 @@ class ArayaBarrierShip {
   takeDamage(dmg) {
     this.hp -= dmg;
     game.addText(`ЩИТ -${Math.round(dmg)}`, this.x, this.y - 50, '#c084fc');
-    AudioSys.playHit();
+    AudioSys.play('hit');
     if (this.hp <= 0) {
       this.alive = false;
-      AudioSys.playExplode();
+      AudioSys.play('explode');
       game.addText('КОРАБЛЬ УНИЧТОЖЕН!', this.x, this.y, '#c084fc');
     }
   }
@@ -1913,23 +1651,17 @@ class LapisOrbits {
     if (this.hitCooldown > 0) this.hitCooldown -= dt;
 
     if (this.hitCooldown <= 0) {
-      const leftBox = { x: this.owner.x - this.dist - 15, y: ARENA.floorY - 60, w: 30, h: 30 };
-      const rightBox = { x: this.owner.x + this.dist - 15, y: ARENA.floorY - 60, w: 30, h: 30 };
+      const leftBox = { x: this.owner.x - this.dist - 15, y: currentArena.floorY - 60, w: 30, h: 30 };
+      const rightBox = { x: this.owner.x + this.dist - 15, y: currentArena.floorY - 60, w: 30, h: 30 };
 
-      if (game.bubbleBarrier && game.bubbleBarrier.active && game.bubbleBarrier.owner !== this.owner) {
-        if (rectsIntersect(leftBox, game.bubbleBarrier.getBox()) || rectsIntersect(rightBox, game.bubbleBarrier.getBox())) {
-          game.bubbleBarrier.takeDamage(this.dmg);
-          this.hitCooldown = 0.8;
-          return;
-        }
+      if (game.interceptDamage(leftBox, this.dmg, this.owner) || game.interceptDamage(rightBox, this.dmg, this.owner)) {
+        this.hitCooldown = 0.8;
+        return;
       }
 
-      const tBox = opponent.getHitbox();
-      if (rectsIntersect(leftBox, tBox)) {
-        opponent.takeDamage(this.dmg, 20, -1);
-        this.hitCooldown = 0.8;
-      } else if (rectsIntersect(rightBox, tBox)) {
-        opponent.takeDamage(this.dmg, 20, 1);
+      if (opponent && (rectsIntersect(leftBox, opponent.getHitbox()) || rectsIntersect(rightBox, opponent.getHitbox()))) {
+        const dir = opponent.x > this.owner.x ? 1 : -1;
+        opponent.takeDamage(this.dmg, 20, dir);
         this.hitCooldown = 0.8;
       }
     }
@@ -1940,16 +1672,14 @@ class LapisOrbits {
     ctx.fillStyle = '#f43f5e';
     ctx.strokeStyle = '#ffe4e6';
     ctx.lineWidth = 2;
-    const y = ARENA.floorY - 45;
+    const y = currentArena.floorY - 45;
     ctx.beginPath();
     ctx.arc(this.owner.x - this.dist, y, 12, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
+    ctx.fill(); ctx.stroke();
 
     ctx.beginPath();
     ctx.arc(this.owner.x + this.dist, y, 12, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
+    ctx.fill(); ctx.stroke();
     ctx.restore();
   }
 }
@@ -1960,7 +1690,7 @@ class RailgunBall {
     this.owner = owner;
     this.dir = dir;
     this.x = owner.x + dir * 35;
-    this.y = ARENA.floorY - 30;
+    this.y = currentArena.floorY - 30;
     this.vx = dir * (14 * 25);
     this.radius = 24;
     this.dmg = 25;
@@ -1971,25 +1701,18 @@ class RailgunBall {
     this.x += this.vx * dt;
     const box = { x: this.x - this.radius, y: this.y - this.radius, w: this.radius * 2, h: this.radius * 2 };
 
-    if (game.bubbleBarrier && game.bubbleBarrier.active && game.bubbleBarrier.owner !== this.owner && rectsIntersect(box, game.bubbleBarrier.getBox())) {
-      game.bubbleBarrier.takeDamage(this.dmg);
+    if (game.interceptDamage(box, this.dmg, this.owner)) {
       this.alive = false;
       return;
     }
 
-    if (game.barrierShip && game.barrierShip.alive && game.barrierShip.owner !== this.owner && rectsIntersect(box, game.barrierShip.getBox())) {
-      game.barrierShip.takeDamage(this.dmg);
-      this.alive = false;
-      return;
-    }
-
-    if (!this.hasHit && rectsIntersect(box, opponent.getHitbox())) {
+    if (!this.hasHit && opponent && rectsIntersect(box, opponent.getHitbox())) {
       opponent.takeDamage(this.dmg, 50, this.dir);
       opponent.invulnerableTimer = 1.0;
       this.hasHit = true;
       this.alive = false;
     }
-    if (this.x < -100 || this.x > ARENA.width + 100) this.alive = false;
+    if (this.x < -100 || this.x > currentArena.width + 100) this.alive = false;
   }
   draw(ctx) {
     ctx.save();
@@ -1998,8 +1721,7 @@ class RailgunBall {
     ctx.lineWidth = 4;
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
+    ctx.fill(); ctx.stroke();
     ctx.restore();
   }
 }
@@ -2010,7 +1732,7 @@ class AttractionBall {
     this.owner = owner;
     this.dir = dir;
     this.x = owner.x + dir * 35;
-    this.y = ARENA.floorY - 45;
+    this.y = currentArena.floorY - 45;
     this.vx = dir * (16 * 25);
     this.radius = 20;
     this.alive = true;
@@ -2020,9 +1742,9 @@ class AttractionBall {
   update(dt) {
     if (!this.stoppedAtWall) {
       this.x += this.vx * dt;
-      if (this.x <= this.radius || this.x >= ARENA.width - this.radius) {
+      if (this.x <= this.radius || this.x >= currentArena.width - this.radius) {
         this.stoppedAtWall = true;
-        this.x = this.x <= this.radius ? this.radius : ARENA.width - this.radius;
+        this.x = this.x <= this.radius ? this.radius : currentArena.width - this.radius;
         this.vx = 0;
       }
     } else {
@@ -2037,23 +1759,17 @@ class AttractionBall {
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
+    ctx.fill(); ctx.stroke();
     ctx.restore();
   }
 }
 
 function rectsIntersect(r1, r2) {
-  return !(
-    r2.x > r1.x + r1.w ||
-    r2.x + r2.w < r1.x ||
-    r2.y > r1.y + r1.h ||
-    r2.y + r2.h < r1.y
-  );
+  return !(r2.x > r1.x + r1.w || r2.x + r2.w < r1.x || r2.y > r1.y + r1.h || r2.y + r2.h < r1.y);
 }
 
 /* ==========================================================================
-   GAME ENGINE & MATCH MANAGER
+   БЛОК 10: ЯДРО ИГРЫ (GAME ENGINE)
    ========================================================================== */
 const game = {
   canvas: document.getElementById('gameCanvas'),
@@ -2062,7 +1778,6 @@ const game = {
   p1ChoiceIndex: 0,
   p2ChoiceIndex: 1,
   mode: 'cpu',
-  selectingP1: true,
 
   player1: null,
   player2: null,
@@ -2077,46 +1792,25 @@ const game = {
   barrierShip: null,
 
   init() {
-    this.renderRoster();
+    UI.init();
     this.loop = this.loop.bind(this);
     requestAnimationFrame(this.loop);
   },
 
-  renderRoster() {
-    const rosterEl = document.getElementById('roster');
-    rosterEl.innerHTML = '';
-    CHARACTERS_DATA.forEach((c, idx) => {
-      const card = document.createElement('div');
-      card.className = `char-card ${idx === this.p1ChoiceIndex ? 'selected-p1' : ''} ${idx === this.p2ChoiceIndex ? 'selected-p2' : ''}`;
-      
-      // ЛКМ — выбор для Игрока 1
-      card.onclick = (e) => {
-        e.preventDefault();
-        selectCharacter(idx, 1);
-      };
-
-      // ПКМ — выбор для Игрока 2 (в режиме на 1 ПК)
-      card.oncontextmenu = (e) => {
-        e.preventDefault();
-        if (game.mode === 'local') {
-          selectCharacter(idx, 2);
-        }
-      };
-
-      card.innerHTML = `
-        ${idx === this.p1ChoiceIndex ? '<span class="badge-tag badge-p1">P1 (ЛКМ)</span>' : ''}
-        ${idx === this.p2ChoiceIndex ? '<span class="badge-tag badge-p2">P2 (ПКМ)</span>' : ''}
-        <div class="char-avatar">${c.avatar}</div>
-        <div class="char-name">${c.name}</div>
-        <div style="font-size: 11px; color: ${c.color}; font-weight: bold;">${c.title}</div>
-        <div class="char-stats">
-          <b>HP:</b> ${c.maxHp} &nbsp; <b>ПЭ:</b> ${c.maxPe}<br>
-          <b>Скорость:</b> ${c.speed}<br>
-          <b>Рука / Нога:</b> ${c.punchDmg} / ${c.kickDmg} (+2 ПЭ)
-        </div>
-      `;
-      rosterEl.appendChild(card);
-    });
+  interceptDamage(hitBox, dmg, attacker) {
+    if (this.bubbleBarrier && this.bubbleBarrier.active && this.bubbleBarrier.owner !== attacker) {
+      if (typeof this.bubbleBarrier.getBox === 'function' && rectsIntersect(hitBox, this.bubbleBarrier.getBox())) {
+        this.bubbleBarrier.takeDamage(dmg);
+        return true;
+      }
+    }
+    if (this.barrierShip && this.barrierShip.alive && this.barrierShip.owner !== attacker) {
+      if (typeof this.barrierShip.getBox === 'function' && rectsIntersect(hitBox, this.barrierShip.getBox())) {
+        this.barrierShip.takeDamage(dmg);
+        return true;
+      }
+    }
+    return false;
   },
 
   startMatch(broadcast = true) {
@@ -2136,27 +1830,25 @@ const game = {
     document.getElementById('p1-name').innerText = this.player1.data.name;
     document.getElementById('p2-name').innerText = this.player2.data.name;
 
-    toggleScreen('screen-select', false);
-    toggleScreen('screen-gameover', false);
+    UI.toggleScreen('screen-select', false);
+    UI.toggleScreen('screen-gameover', false);
     document.getElementById('hud').classList.remove('hidden');
+
+    UI.buildCooldownBadges();
 
     if (this.mode === 'online') {
       document.getElementById('net-tag').classList.remove('hidden');
       document.getElementById('hud-controls-info').innerText = Net.isHost 
-        ? "Вы управляете Игроком 1 (Слева) | A/D, W, S, Z/X, 1/2/3 || [ESC / 0: Прервать бой]" 
-        : "Вы управляете Игроком 2 (Справа) | A/D или Стрелки, W, S, Z/X, 1/2/3 || [ESC / 0: Прервать бой]";
+        ? "Вы: Игрок 1 (Слева) | A/D, W, S, Z/X, 1/2/3 || [ESC / 0: Прервать]" 
+        : "Вы: Игрок 2 (Справа) | A/D/Стрелки, W, S, Z/X, 1/2/3 || [ESC / 0: Прервать]";
 
       if (Net.isHost && broadcast) {
-        Net.send({
-          type: 'START_GAME',
-          p1: this.p1ChoiceIndex,
-          p2: this.p2ChoiceIndex
-        });
+        Net.send({ type: 'START_GAME', p1: this.p1ChoiceIndex, p2: this.p2ChoiceIndex });
       }
     } else {
       document.getElementById('net-tag').classList.add('hidden');
       document.getElementById('hud-controls-info').innerText = 
-        "[P1] A/D (Ход), W (Прыжок), S (Присед), Z/X (Удары +2 ПЭ), 1/2/3 (Приемы) || [ESC / 0: Прервать бой]";
+        "[P1] A/D (Ход), W (Прыжок), S (Присед), Z/X (Удары +2 ПЭ), 1/2/3 (Приемы) || [ESC / 0: Прервать]";
     }
   },
 
@@ -2169,13 +1861,11 @@ const game = {
     this.bubbleBarrier = null;
     this.barrierShip = null;
 
-    if (notifyPeer && this.mode === 'online') {
-      Net.send({ type: 'ABORT_MATCH' });
-    }
+    if (notifyPeer && this.mode === 'online') Net.send({ type: 'ABORT' });
 
     document.getElementById('hud').classList.add('hidden');
-    toggleScreen('screen-gameover', false);
-    toggleScreen('screen-select', true);
+    UI.toggleScreen('screen-gameover', false);
+    UI.toggleScreen('screen-select', true);
   },
 
   addText(text, x, y, color = '#fff') {
@@ -2186,10 +1876,7 @@ const game = {
     if (!this.matchActive || this.matchOver) return;
 
     if (this.mode === 'online' && !Net.isHost) {
-      Net.send({
-        type: 'CLIENT_INPUTS',
-        inputs: Input.getClientInputs()
-      });
+      Net.send({ type: 'CLIENT_INPUTS', inputs: Input.getClientInputs() });
       return;
     }
 
@@ -2214,10 +1901,10 @@ const game = {
       if (this.player1.hp <= 0 && this.player2.hp <= 0) {
         this.endMatch('НИЧЬЯ!');
       } else if (this.player1.hp <= 0) {
-        const verb = this.player2.data.gender === 'f' ? 'ПОБЕДИЛА!' : 'ПОБЕДИЛ!';
+        const verb = getGenderWord(this.player2.data.gender, 'ПОБЕДИЛ!', 'ПОБЕДИЛА!');
         this.endMatch(`${this.player2.data.name.toUpperCase()} ${verb}`);
       } else {
-        const verb = this.player1.data.gender === 'f' ? 'ПОБЕДИЛА!' : 'ПОБЕДИЛ!';
+        const verb = getGenderWord(this.player1.data.gender, 'ПОБЕДИЛ!', 'ПОБЕДИЛА!');
         this.endMatch(`${this.player1.data.name.toUpperCase()} ${verb}`);
       }
     }
@@ -2230,10 +1917,7 @@ const game = {
     this.updateHUD();
 
     if (this.mode === 'online' && Net.isHost) {
-      Net.send({
-        type: 'STATE_SNAPSHOT',
-        snapshot: this.generateStateSnapshot()
-      });
+      Net.send({ type: 'STATE_SNAPSHOT', snapshot: this.generateStateSnapshot() });
     }
   },
 
@@ -2245,16 +1929,14 @@ const game = {
         x: this.player1.x, y: this.player1.y, hp: this.player1.hp, pe: this.player1.pe,
         facing: this.player1.facing, isCrouching: this.player1.isCrouching,
         stunTimer: this.player1.stunTimer, stunImmunityTimer: this.player1.stunImmunityTimer,
-        invulnerableTimer: this.player1.invulnerableTimer,
-        cooldowns: this.player1.cooldowns,
+        invulnerableTimer: this.player1.invulnerableTimer, cooldowns: this.player1.cooldowns,
         activeAttack: this.player1.activeAttack ? { type: this.player1.activeAttack.type, reach: this.player1.activeAttack.reach } : null
       },
       p2: {
         x: this.player2.x, y: this.player2.y, hp: this.player2.hp, pe: this.player2.pe,
         facing: this.player2.facing, isCrouching: this.player2.isCrouching,
         stunTimer: this.player2.stunTimer, stunImmunityTimer: this.player2.stunImmunityTimer,
-        invulnerableTimer: this.player2.invulnerableTimer,
-        cooldowns: this.player2.cooldowns,
+        invulnerableTimer: this.player2.invulnerableTimer, cooldowns: this.player2.cooldowns,
         activeAttack: this.player2.activeAttack ? { type: this.player2.activeAttack.type, reach: this.player2.activeAttack.reach } : null
       },
       projectiles: this.projectiles.map(p => ({
@@ -2276,9 +1958,7 @@ const game = {
     this.matchTimer = s.timer;
     document.getElementById('match-timer').innerText = Math.ceil(this.matchTimer);
 
-    if (s.gameOver && !this.matchOver) {
-      this.endMatch(s.gameOver);
-    }
+    if (s.gameOver && !this.matchOver) this.endMatch(s.gameOver);
 
     Object.assign(this.player1, s.p1);
     Object.assign(this.player2, s.p2);
@@ -2305,279 +1985,280 @@ const game = {
   },
 
   updateHUD() {
-    const p1HpPct = (this.player1.hp / this.player1.maxHp) * 100;
-    const p2HpPct = (this.player2.hp / this.player2.maxHp) * 100;
-    const p1PePct = (this.player1.pe / this.player1.maxPe) * 100;
-    const p2PePct = (this.player2.pe / this.player2.maxPe) * 100;
-
-    document.getElementById('p1-hp').style.width = `${p1HpPct}%`;
-    document.getElementById('p2-hp').style.width = `${p2HpPct}%`;
-    document.getElementById('p1-pe').style.width = `${p1PePct}%`;
-    document.getElementById('p2-pe').style.width = `${p2PePct}%`;
+    document.getElementById('p1-hp').style.width = `${(this.player1.hp / this.player1.maxHp) * 100}%`;
+    document.getElementById('p2-hp').style.width = `${(this.player2.hp / this.player2.maxHp) * 100}%`;
+    document.getElementById('p1-pe').style.width = `${(this.player1.pe / this.player1.maxPe) * 100}%`;
+    document.getElementById('p2-pe').style.width = `${(this.player2.pe / this.player2.maxPe) * 100}%`;
 
     document.getElementById('p1-hp-val').innerText = `${Math.ceil(this.player1.hp)} / ${this.player1.maxHp}`;
     document.getElementById('p2-hp-val').innerText = `${Math.ceil(this.player2.hp)} / ${this.player2.maxHp}`;
     document.getElementById('p1-pe-val').innerText = `${Math.ceil(this.player1.pe)} / ${this.player1.maxPe}`;
     document.getElementById('p2-pe-val').innerText = `${Math.ceil(this.player2.pe)} / ${this.player2.maxPe}`;
 
-    this.updateCooldownBadge('p1-cd1', 1, this.player1.cooldowns.s1);
-    this.updateCooldownBadge('p1-cd2', 2, this.player1.cooldowns.s2);
-    this.updateCooldownBadge('p1-cd3', 3, this.player1.cooldowns.s3);
-
-    this.updateCooldownBadge('p2-cd1', 1, this.player2.cooldowns.s1);
-    this.updateCooldownBadge('p2-cd2', 2, this.player2.cooldowns.s2);
-    this.updateCooldownBadge('p2-cd3', 3, this.player2.cooldowns.s3);
-  },
-
-  updateCooldownBadge(id, slot, cd) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    if (cd > 0) {
-      el.className = 'cd-badge';
-      el.innerText = `[${slot}] ${cd.toFixed(1)}c`;
-    } else {
-      el.className = 'cd-badge ready';
-      el.innerText = `[${slot}] ГОТОВ`;
-    }
+    UI.updateCooldownsDisplay(this.player1, 'p1');
+    UI.updateCooldownsDisplay(this.player2, 'p2');
   },
 
   endMatch(msg) {
     this.matchActive = false;
     this.matchOver = true;
     document.getElementById('winner-banner').innerText = msg;
-    toggleScreen('screen-gameover', true);
+    UI.toggleScreen('screen-gameover', true);
 
-    if (this.mode === 'online' && !Net.isHost) {
-      document.getElementById('btn-rematch').style.display = 'none';
-    } else {
-      document.getElementById('btn-rematch').style.display = 'block';
-    }
+    document.getElementById('btn-rematch').style.display = (this.mode === 'online' && !Net.isHost) ? 'none' : 'block';
   },
 
   draw() {
-    const ctx = this.ctx;
-    ctx.clearRect(0, 0, ARENA.width, ARENA.height);
+    this.ctx.clearRect(0, 0, currentArena.width, currentArena.height);
 
-    const bgGrad = ctx.createLinearGradient(0, 0, 0, ARENA.floorY);
-    bgGrad.addColorStop(0, '#090c17');
-    bgGrad.addColorStop(1, '#11172a');
-    ctx.fillStyle = bgGrad;
-    ctx.fillRect(0, 0, ARENA.width, ARENA.floorY);
-
-    ctx.strokeStyle = 'rgba(0, 210, 255, 0.05)';
-    ctx.lineWidth = 1;
-    for (let x = 0; x <= ARENA.width; x += 55) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, ARENA.floorY);
-      ctx.stroke();
-    }
-
-    ctx.fillStyle = 'rgba(0, 229, 255, 0.35)';
-    ctx.fillRect(0, 0, 4, ARENA.floorY);
-    ctx.fillStyle = 'rgba(255, 51, 102, 0.35)';
-    ctx.fillRect(ARENA.width - 4, 0, 4, ARENA.floorY);
-
-    const floorGrad = ctx.createLinearGradient(0, ARENA.floorY, 0, ARENA.height);
-    floorGrad.addColorStop(0, '#151928');
-    floorGrad.addColorStop(1, '#080a12');
-    ctx.fillStyle = floorGrad;
-    ctx.fillRect(0, ARENA.floorY, ARENA.width, ARENA.height - ARENA.floorY);
-
-    ctx.strokeStyle = '#00e5ff';
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(0, ARENA.floorY);
-    ctx.lineTo(ARENA.width, ARENA.floorY);
-    ctx.stroke();
-
-    ctx.strokeStyle = 'rgba(0, 229, 255, 0.1)';
-    ctx.lineWidth = 1;
-    for (let x = 30; x < ARENA.width; x += 60) {
-      ctx.beginPath();
-      ctx.moveTo(x, ARENA.floorY);
-      ctx.lineTo(x - 30, ARENA.height);
-      ctx.stroke();
-    }
+    currentArena.draw(this.ctx);
 
     if (!this.player1 || !this.player2) return;
 
-    if (this.bubbleBarrier && this.bubbleBarrier.active) BubbleBarrier.prototype.draw.call(this.bubbleBarrier, ctx);
-    if (this.barrierShip && this.barrierShip.alive) ArayaBarrierShip.prototype.draw.call(this.barrierShip, ctx);
+    if (this.bubbleBarrier && this.bubbleBarrier.active) BubbleBarrier.prototype.draw.call(this.bubbleBarrier, this.ctx);
+    if (this.barrierShip && this.barrierShip.alive) ArayaBarrierShip.prototype.draw.call(this.barrierShip, this.ctx);
 
-    this.projectiles.forEach(p => { if (p.draw) p.draw(ctx); });
+    this.projectiles.forEach(p => { if (p.draw) p.draw(this.ctx); });
 
-    this.player1.draw(ctx);
-    this.player2.draw(ctx);
+    this.player1.draw(this.ctx);
+    this.player2.draw(this.ctx);
 
-    this.particles.forEach(p => p.draw(ctx));
-    this.floatingTexts.forEach(t => t.draw(ctx));
+    this.particles.forEach(p => p.draw(this.ctx));
+    this.floatingTexts.forEach(t => t.draw(this.ctx));
   },
 
   lastTime: performance.now(),
   loop(currentTime) {
     const dt = Math.min(0.1, (currentTime - this.lastTime) / 1000);
     this.lastTime = currentTime;
-
     this.update(dt);
     this.draw();
-
     requestAnimationFrame(this.loop);
   }
 };
 
 /* ==========================================================================
-   UI TRANSITIONS
+   БЛОК 11: УПРАВЛЕНИЕ ИНТЕРФЕЙСОМ (UI MODULE)
    ========================================================================== */
-function toggleScreen(screenId, show) {
-  const el = document.getElementById(screenId);
-  if (show) el.classList.remove('hidden');
-  else el.classList.add('hidden');
-}
+const UI = {
+  init() {
+    this.renderRoster();
+    this.generateHelpContent();
+  },
 
-function openHostLobby() {
-  AudioSys.init();
-  toggleScreen('screen-menu', false);
-  toggleScreen('screen-host', true);
-  document.getElementById('host-room-id').value = 'Подключение...';
-  document.getElementById('host-status').innerText = 'Регистрация комнаты в сети...';
+  toggleScreen(screenId, show) {
+    const el = document.getElementById(screenId);
+    if (show) el.classList.remove('hidden');
+    else el.classList.add('hidden');
+  },
 
-  Net.initHost(
-    (id) => {
-      document.getElementById('host-room-id').value = id;
-      document.getElementById('host-status').innerText = 'Ожидание подключения соперника...';
-    },
-    () => {
-      document.getElementById('host-status').innerText = 'Игрок подключился! Переход в выбор бойцов...';
-      setTimeout(() => startSelection('online'), 600);
-    },
-    (errMsg) => document.getElementById('host-status').innerText = errMsg
-  );
-}
+  renderRoster() {
+    const rosterEl = document.getElementById('roster');
+    rosterEl.innerHTML = '';
+    CHARACTERS_DATA.forEach((c, idx) => {
+      const card = document.createElement('div');
+      card.className = `char-card ${idx === game.p1ChoiceIndex ? 'selected-p1' : ''} ${idx === game.p2ChoiceIndex ? 'selected-p2' : ''}`;
+      
+      card.onclick = (e) => {
+        e.preventDefault();
+        this.selectCharacter(idx, 1);
+      };
 
-function copyHostId() {
-  const inp = document.getElementById('host-room-id');
-  inp.select();
-  navigator.clipboard.writeText(inp.value).then(() => {
-    document.getElementById('host-status').innerText = 'ID скопирован в буфер обмена!';
-  });
-}
+      card.oncontextmenu = (e) => {
+        e.preventDefault();
+        if (game.mode === 'local') this.selectCharacter(idx, 2);
+      };
 
-function openJoinLobby() {
-  AudioSys.init();
-  toggleScreen('screen-menu', false);
-  toggleScreen('screen-join', true);
-  document.getElementById('join-status').innerText = '';
-}
+      card.innerHTML = `
+        ${idx === game.p1ChoiceIndex ? '<span class="badge-tag badge-p1">P1 (ЛКМ)</span>' : ''}
+        ${idx === game.p2ChoiceIndex ? '<span class="badge-tag badge-p2">P2 (ПКМ)</span>' : ''}
+        <div class="char-avatar">${c.avatar}</div>
+        <div class="char-name">${c.name}</div>
+        <div style="font-size: 11px; color: ${c.color}; font-weight: bold;">${c.title}</div>
+        <div class="char-stats">
+          <b>HP:</b> ${c.maxHp} &nbsp; <b>ПЭ:</b> ${c.maxPe}<br>
+          <b>Скорость:</b> ${c.speed}<br>
+          <b>Рука / Нога:</b> ${c.punchDmg} / ${c.kickDmg} (+2 ПЭ)
+        </div>
+      `;
+      rosterEl.appendChild(card);
+    });
+  },
 
-function connectToHost() {
-  const roomId = document.getElementById('join-room-id').value.trim();
-  if (!roomId) {
-    document.getElementById('join-status').innerText = 'Введите ID комнаты!';
-    return;
-  }
-  document.getElementById('join-status').innerText = 'Подключение к хосту...';
+  generateHelpContent() {
+    const container = document.getElementById('help-characters-content');
+    container.innerHTML = '';
+    CHARACTERS_DATA.forEach((c, idx) => {
+      let html = `<h3>${idx + 1}. ${c.name} (HP: ${c.maxHp} | ПЭ: ${c.maxPe} | Скорость: ${c.speed})</h3>`;
+      c.skills.forEach((s, sIdx) => {
+        html += `<p>• [${sIdx + 1}] <b>${s.name}</b> (${s.cost} ПЭ, КД ${s.cd}с): ${s.desc}</p>`;
+      });
+      container.innerHTML += html;
+    });
+  },
 
-  Net.join(roomId, 
-    () => {
-      document.getElementById('join-status').innerText = 'Успешно! Вход...';
-      setTimeout(() => startSelection('online'), 600);
-    },
-    (err) => document.getElementById('join-status').innerText = err
-  );
-}
+  buildCooldownBadges() {
+    ['p1', 'p2'].forEach(pKey => {
+      const row = document.getElementById(`${pKey}-cds`);
+      row.innerHTML = '';
+      for (let i = 1; i <= 3; i++) {
+        row.innerHTML += `<span class="cd-badge ready" id="${pKey}-cd${i}">[${i}] ГОТОВ</span>`;
+      }
+    });
+  },
 
-function cancelNetworkLobby() {
-  Net.close();
-  toggleScreen('screen-host', false);
-  toggleScreen('screen-join', false);
-  toggleScreen('screen-menu', true);
-}
+  updateCooldownsDisplay(fighter, pKey) {
+    for (let i = 0; i < 3; i++) {
+      const el = document.getElementById(`${pKey}-cd${i + 1}`);
+      if (!el) continue;
+      const cd = fighter.cooldowns[i];
+      if (cd > 0) {
+        el.className = 'cd-badge';
+        el.innerText = `[${i + 1}] ${cd.toFixed(1)}c`;
+      } else {
+        el.className = 'cd-badge ready';
+        el.innerText = `[${i + 1}] ГОТОВ`;
+      }
+    }
+  },
 
-function startSelection(mode) {
-  AudioSys.init();
-  game.mode = mode;
-  game.selectingP1 = true;
+  startSelection(mode) {
+    AudioSys.init();
+    game.mode = mode;
 
-  toggleScreen('screen-menu', false);
-  toggleScreen('screen-host', false);
-  toggleScreen('screen-join', false);
-  toggleScreen('screen-gameover', false);
-  toggleScreen('screen-select', true);
+    this.toggleScreen('screen-menu', false);
+    this.toggleScreen('screen-host', false);
+    this.toggleScreen('screen-join', false);
+    this.toggleScreen('screen-gameover', false);
+    this.toggleScreen('screen-select', true);
 
-  if (mode === 'online') {
-    if (Net.isHost) {
-      document.getElementById('select-prompt').innerText = "Вы (Хост): Выберите Игрока 1";
-      document.getElementById('btn-confirm-fight').disabled = false;
+    const btn = document.getElementById('btn-confirm-fight');
+    btn.disabled = false;
+    btn.innerText = "В БОЙ!";
+
+    if (mode === 'online') {
+      if (Net.isHost) {
+        document.getElementById('select-prompt').innerText = "Вы (Хост): Выберите Игрока 1";
+      } else {
+        document.getElementById('select-prompt').innerText = "Вы (Клиент): Выберите Игрока 2";
+        btn.disabled = true;
+        btn.innerText = "Ждем Хоста...";
+      }
+    } else if (mode === 'local') {
+      document.getElementById('select-prompt').innerText = "Игрок 1 (ЛКМ) | Игрок 2 (ПКМ)";
     } else {
-      document.getElementById('select-prompt').innerText = "Вы (Клиент): Выберите Игрока 2";
-      document.getElementById('btn-confirm-fight').disabled = true;
-      document.getElementById('btn-confirm-fight').innerText = "Ждем Хоста...";
+      document.getElementById('select-prompt').innerText = "Выберите вашего бойца";
     }
-  } else if (mode === 'local') {
-    document.getElementById('select-prompt').innerText = "Игрок 1 (ЛКМ) | Игрок 2 (ПКМ)";
-    document.getElementById('btn-confirm-fight').disabled = false;
-    document.getElementById('btn-confirm-fight').innerText = "В БОЙ!";
-  } else {
-    document.getElementById('select-prompt').innerText = "Выберите вашего бойца";
-    document.getElementById('btn-confirm-fight').disabled = false;
-    document.getElementById('btn-confirm-fight').innerText = "В БОЙ!";
-  }
-  game.renderRoster();
-}
+    this.renderRoster();
+  },
 
-function selectCharacter(idx, player = 1) {
-  AudioSys.init();
-  if (game.mode === 'online') {
-    if (Net.isHost) {
-      game.p1ChoiceIndex = idx;
-      Net.send({ type: 'SELECT_CHAR', index: idx });
+  selectCharacter(idx, player = 1) {
+    AudioSys.init();
+    if (game.mode === 'online') {
+      if (Net.isHost) {
+        game.p1ChoiceIndex = idx;
+        Net.send({ type: 'SELECT_CHAR', index: idx });
+      } else {
+        game.p2ChoiceIndex = idx;
+        Net.send({ type: 'SELECT_CHAR', index: idx });
+      }
+    } else if (game.mode === 'local') {
+      if (player === 1) game.p1ChoiceIndex = idx;
+      else if (player === 2) game.p2ChoiceIndex = idx;
     } else {
-      game.p2ChoiceIndex = idx;
-      Net.send({ type: 'SELECT_CHAR', index: idx });
-    }
-  } else if (game.mode === 'local') {
-    if (player === 1) {
       game.p1ChoiceIndex = idx;
-    } else if (player === 2) {
-      game.p2ChoiceIndex = idx;
+      game.p2ChoiceIndex = (idx + 1) % CHARACTERS_DATA.length;
     }
-  } else {
-    game.p1ChoiceIndex = idx;
-    game.p2ChoiceIndex = (idx + 1) % CHARACTERS_DATA.length;
+    this.renderRoster();
+  },
+
+  confirmSelection() {
+    AudioSys.init();
+    game.startMatch(true);
+  },
+
+  restartMatch() {
+    this.toggleScreen('screen-gameover', false);
+    if (game.mode === 'online' && Net.isHost) Net.send({ type: 'REMATCH' });
+    game.startMatch(true);
+  },
+
+  openHostLobby() {
+    AudioSys.init();
+    this.toggleScreen('screen-menu', false);
+    this.toggleScreen('screen-host', true);
+    document.getElementById('host-room-id').value = 'Подключение...';
+    document.getElementById('host-status').innerText = 'Регистрация комнаты в сети...';
+
+    Net.initHost(
+      (id) => {
+        document.getElementById('host-room-id').value = id;
+        document.getElementById('host-status').innerText = 'Ожидание подключения соперника...';
+      },
+      () => {
+        document.getElementById('host-status').innerText = 'Игрок подключился! Переход...';
+        setTimeout(() => this.startSelection('online'), 600);
+      },
+      (err) => document.getElementById('host-status').innerText = err
+    );
+  },
+
+  copyHostId() {
+    const inp = document.getElementById('host-room-id');
+    inp.select();
+    navigator.clipboard.writeText(inp.value).then(() => {
+      document.getElementById('host-status').innerText = 'ID скопирован в буфер обмена!';
+    });
+  },
+
+  openJoinLobby() {
+    AudioSys.init();
+    this.toggleScreen('screen-menu', false);
+    this.toggleScreen('screen-join', true);
+    document.getElementById('join-status').innerText = '';
+  },
+
+  connectToHost() {
+    const roomId = document.getElementById('join-room-id').value.trim();
+    if (!roomId) {
+      document.getElementById('join-status').innerText = 'Введите ID комнаты!';
+      return;
+    }
+    document.getElementById('join-status').innerText = 'Подключение к хосту...';
+
+    Net.join(roomId, 
+      () => {
+        document.getElementById('join-status').innerText = 'Успешно! Вход...';
+        setTimeout(() => this.startSelection('online'), 600);
+      },
+      (err) => document.getElementById('join-status').innerText = err
+    );
+  },
+
+  cancelNetworkLobby() {
+    Net.close();
+    this.toggleScreen('screen-host', false);
+    this.toggleScreen('screen-join', false);
+    this.toggleScreen('screen-menu', true);
+  },
+
+  exitSelection() {
+    if (game.mode === 'online') this.cancelNetworkLobby();
+    else {
+      this.toggleScreen('screen-select', false);
+      this.toggleScreen('screen-menu', true);
+    }
+  },
+
+  exitToMainMenu() {
+    Net.close();
+    game.matchActive = false;
+    this.toggleScreen('screen-gameover', false);
+    this.toggleScreen('screen-select', false);
+    document.getElementById('hud').classList.add('hidden');
+    this.toggleScreen('screen-menu', true);
   }
-  game.renderRoster();
-}
-
-function confirmSelection() {
-  AudioSys.init();
-  game.startMatch(true);
-}
-
-function restartMatch() {
-  toggleScreen('screen-gameover', false);
-  if (game.mode === 'online' && Net.isHost) {
-    Net.send({ type: 'REMATCH' });
-  }
-  game.startMatch(true);
-}
-
-function exitSelection() {
-  if (game.mode === 'online') cancelNetworkLobby();
-  else {
-    toggleScreen('screen-select', false);
-    toggleScreen('screen-menu', true);
-  }
-}
-
-function exitToMainMenu() {
-  Net.close();
-  game.matchActive = false;
-  toggleScreen('screen-gameover', false);
-  toggleScreen('screen-select', false);
-  document.getElementById('hud').classList.add('hidden');
-  toggleScreen('screen-menu', true);
-}
+};
 
 window.onload = () => {
   game.init();
