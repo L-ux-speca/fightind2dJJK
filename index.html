@@ -39,9 +39,6 @@
       height: 100%;
     }
 
-    /* ==========================================================================
-       СТИЛИ ИНТЕРФЕЙСА (ЭКРАНЫ И ЭЛЕМЕНТЫ)
-       ========================================================================== */
     .screen {
       position: absolute;
       top: 0;
@@ -102,7 +99,6 @@
       transform: none !important;
     }
 
-    /* Сетевое лобби */
     .lobby-card {
       background: #141726;
       border: 1px solid #2d3758;
@@ -134,7 +130,6 @@
     }
     .status-text { font-size: 14px; color: #9cb3d3; margin: 10px 0 15px; min-height: 20px; }
 
-    /* Экран выбора бойцов */
     .char-select-wrap { display: flex; flex-direction: column; align-items: center; width: 92%; }
     .select-title { font-size: 26px; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 2px; color: #00d2ff; }
     .roster-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; width: 100%; max-width: 950px; }
@@ -162,7 +157,6 @@
     .char-name { font-weight: bold; font-size: 16px; margin-bottom: 4px; }
     .char-stats { font-size: 11px; color: #8da2c0; line-height: 1.4; margin-top: 6px; text-align: left; }
 
-    /* Боевой HUD */
     #hud { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
     .top-bar { display: flex; justify-content: space-between; align-items: flex-start; padding: 16px 26px; }
     .fighter-hud { width: 420px; }
@@ -198,11 +192,9 @@
 <div id="game-container">
   <canvas id="gameCanvas" width="1100" height="550"></canvas>
 
-  <!-- HUD -->
   <div id="hud" class="hidden">
     <div id="net-tag" class="network-badge hidden">СЕТЕВОЙ МУЛЬТИПЛЕЕР</div>
     <div class="top-bar">
-      <!-- P1 HUD -->
       <div class="fighter-hud p1-hud">
         <div class="hud-name" id="p1-name">FIGHTER 1</div>
         <div class="bar-bg">
@@ -218,7 +210,6 @@
 
       <div class="timer-box" id="match-timer">120</div>
 
-      <!-- P2 HUD -->
       <div class="fighter-hud p2-hud">
         <div class="hud-name" id="p2-name">FIGHTER 2</div>
         <div class="bar-bg">
@@ -237,7 +228,6 @@
     </div>
   </div>
 
-  <!-- Экран 1: Главное Меню -->
   <div id="screen-menu" class="screen">
     <h1 class="title">Clash of Champions</h1>
     <button class="menu-btn accent" onclick="UI.openHostLobby()">Создать комнату</button>
@@ -247,7 +237,6 @@
     <button class="menu-btn" onclick="UI.toggleScreen('screen-settings', true)">Справка и Баланс</button>
   </div>
 
-  <!-- Экран: Создание Сетевой Комнаты -->
   <div id="screen-host" class="screen hidden">
     <div class="lobby-card">
       <div class="lobby-title">Создание комнаты</div>
@@ -261,7 +250,6 @@
     </div>
   </div>
 
-  <!-- Экран: Вход в Комнату -->
   <div id="screen-join" class="screen hidden">
     <div class="lobby-card">
       <div class="lobby-title">Вход в комнату</div>
@@ -275,7 +263,6 @@
     </div>
   </div>
 
-  <!-- Экран 2: Выбор Персонажей -->
   <div id="screen-select" class="screen hidden">
     <div class="char-select-wrap">
       <div class="select-title" id="select-prompt">Выберите персонажа</div>
@@ -287,19 +274,17 @@
     </div>
   </div>
 
-  <!-- Экран: Справка (Генерируется динамически) -->
   <div id="screen-settings" class="screen hidden">
     <div class="help-modal">
       <h2 style="color: #fff; margin-bottom: 10px;">Баланс боя и правила приемов</h2>
       <p><b>Энергия и удары:</b> Пассивный прирост 0.5 ПЭ/сек. Обычные удары руками (Z) и ногами (X) восполняют <b>+2 ПЭ</b>.</p>
       <p><b>Защита от станлока:</b> После любого оглушения персонаж получает <b>1.5 секунды иммунитета</b> к повторному оглушению.</p>
-      <p><b>Уклонение приседанием:</b> Присед (S или J) уменьшает рост в 2 раза — линейные снаряды на уровне груди пролетают мимо.</p>
+      <p><b>Уклонение приседанием:</b> Присед (S или J) уменьшает хитбокс в 2 раза.</p>
       <div id="help-characters-content"></div>
       <button class="menu-btn" style="margin-top: 20px; width: 100%;" onclick="UI.toggleScreen('screen-settings', false); UI.toggleScreen('screen-menu', true);">Закрыть</button>
     </div>
   </div>
 
-  <!-- Экран 4: Конец Матча -->
   <div id="screen-gameover" class="screen hidden">
     <div class="game-over-banner" id="winner-banner">ПОБЕДА!</div>
     <div style="display: flex; gap: 20px;">
@@ -311,9 +296,6 @@
 </div>
 
 <script>
-/* ==========================================================================
-   БЛОК 1: ЗВУКОВОЙ ДВИЖОК (WEB AUDIO API)
-   ========================================================================== */
 const AudioSys = {
   ctx: null,
   init() {
@@ -362,9 +344,6 @@ const AudioSys = {
   }
 };
 
-/* ==========================================================================
-   БЛОК 2: РЕГИСТР АРЕН (ARENAS REGISTRY)
-   ========================================================================== */
 const ARENAS = [
   {
     id: 'cyber_arena',
@@ -417,17 +396,10 @@ const ARENAS = [
 
 let currentArena = ARENAS[0];
 
-/* ==========================================================================
-   БЛОК 3: ГРАММАТИЧЕСКИЙ ХЕЛПЕР
-   ========================================================================== */
 function getGenderWord(gender, maleWord, femaleWord) {
   return gender === 'f' ? femaleWord : maleWord;
 }
 
-/* ==========================================================================
-   БЛОК 4: РЕГИСТР БОЙЦОВ И ИХ СПОСОБНОСТЕЙ
-   (Добавлено поле imgSrc для растрового спрайта персонажа)
-   ========================================================================== */
 const CHARACTERS_DATA = [
   {
     id: 'yuzuha',
@@ -442,7 +414,17 @@ const CHARACTERS_DATA = [
     speed: 10,
     punchDmg: 10,
     kickDmg: 12,
-    imgSrc: 'character_art.png', // Ссылка на спрайт бойца на GitHub / в проекте
+    // Набор спрайтов для персонажа (если файлов нет, сработает авто-генерация формы)
+    sprites: {
+      stand: 'sprites/yuzuha_stand.png',
+      crouch: 'sprites/yuzuha_crouch.png',
+      walk: ['sprites/yuzuha_walk1.png', 'sprites/yuzuha_walk2.png', 'sprites/yuzuha_walk3.png'],
+      jump: 'sprites/yuzuha_jump.png',
+      hurt: 'sprites/yuzuha_hurt.png',
+      skill1: 'sprites/yuzuha_skill1.png',
+      skill2: 'sprites/yuzuha_skill2.png',
+      skill3: 'sprites/yuzuha_skill3.png'
+    },
     skills: [
       {
         name: 'Щупальце',
@@ -451,6 +433,7 @@ const CHARACTERS_DATA = [
         desc: 'Бьет на 2м вперед, наносит 20 ед. урона.',
         castMsg: 'ПРИЗВАЛА ЩУПАЛЬЦЕ!',
         action(fighter) {
+          fighter.triggerSkillAnim(0);
           AudioSys.play('beam');
           game.projectiles.push(new YuzuhaTentacle(fighter, fighter.facing));
         }
@@ -462,6 +445,7 @@ const CHARACTERS_DATA = [
         desc: 'Поток кристаллов на 1.8 сек (210px). 0.8с оглушения, ~20 ед. урона.',
         castMsg: 'ИЗУМРУДНЫЙ ВСПЛЕСК!',
         action(fighter) {
+          fighter.triggerSkillAnim(1);
           fighter.channelTimer = 1.8;
           fighter.channelSkill = this;
           fighter.attackCooldown = 1.9;
@@ -492,6 +476,7 @@ const CHARACTERS_DATA = [
         desc: 'Полная неуязвимость и мерцание на 3 секунды.',
         castMsg: 'ИСПОЛЬЗОВАЛА МИМИКРИЮ!',
         action(fighter) {
+          fighter.triggerSkillAnim(2);
           fighter.invulnerableTimer = 3.0;
           AudioSys.play('teleport');
         }
@@ -511,6 +496,16 @@ const CHARACTERS_DATA = [
     speed: 8,
     punchDmg: 12,
     kickDmg: 14,
+    sprites: {
+      stand: 'sprites/caesar_stand.png',
+      crouch: 'sprites/caesar_crouch.png',
+      walk: ['sprites/caesar_walk1.png', 'sprites/caesar_walk2.png', 'sprites/caesar_walk3.png'],
+      jump: 'sprites/caesar_jump.png',
+      hurt: 'sprites/caesar_hurt.png',
+      skill1: 'sprites/caesar_skill1.png',
+      skill2: 'sprites/caesar_skill2.png',
+      skill3: 'sprites/caesar_skill3.png'
+    },
     skills: [
       {
         name: 'Пузырьковая Пушка',
@@ -519,6 +514,7 @@ const CHARACTERS_DATA = [
         desc: 'Поток пузырей на 2 сек. Суммарно 20 ед. урона, отталкивает врага.',
         castMsg: 'ПУЗЫРЬКОВАЯ ПУШКА!',
         action(fighter) {
+          fighter.triggerSkillAnim(0);
           fighter.channelTimer = 2.0;
           fighter.channelSkill = this;
           fighter.attackCooldown = 2.1;
@@ -550,6 +546,7 @@ const CHARACTERS_DATA = [
         desc: 'Клин из пузырей. 18 урона и отброс врага на 4 метра.',
         castMsg: 'ПУЗЫРЬКОВЫЙ РЕЗАК!',
         action(fighter) {
+          fighter.triggerSkillAnim(1);
           AudioSys.play('beam');
           game.projectiles.push(new BubbleCutter(fighter, fighter.facing));
         }
@@ -561,6 +558,7 @@ const CHARACTERS_DATA = [
         desc: 'Сфера с 30 HP. Перехватывает ВСЕ удары и снаряды, пока не лопнет.',
         castMsg: 'СОЗДАЛ БАРЬЕР!',
         action(fighter, opponent) {
+          fighter.triggerSkillAnim(2);
           AudioSys.play('beam');
           fighter.isCrouching = true;
           game.bubbleBarrier = new BubbleBarrier(fighter, opponent);
@@ -581,6 +579,16 @@ const CHARACTERS_DATA = [
     speed: 7,
     punchDmg: 10,
     kickDmg: 10,
+    sprites: {
+      stand: 'sprites/araya_stand.png',
+      crouch: 'sprites/araya_crouch.png',
+      walk: ['sprites/araya_walk1.png', 'sprites/araya_walk2.png', 'sprites/araya_walk3.png'],
+      jump: 'sprites/araya_jump.png',
+      hurt: 'sprites/araya_hurt.png',
+      skill1: 'sprites/araya_skill1.png',
+      skill2: 'sprites/araya_skill2.png',
+      skill3: 'sprites/araya_skill3.png'
+    },
     skills: [
       {
         name: 'Пушки',
@@ -589,6 +597,7 @@ const CHARACTERS_DATA = [
         desc: 'Корабль производит 7 выстрелов ядрами по позиции противника.',
         castMsg: 'ПРИЗВАЛА ПУШКИ!',
         action(fighter, opponent) {
+          fighter.triggerSkillAnim(0);
           AudioSys.play('beam');
           game.projectiles.push(new ArayaCannonShip(fighter, opponent));
         }
@@ -600,6 +609,7 @@ const CHARACTERS_DATA = [
         desc: 'Корабль мчит вперед. 22 урона, 1.2с оглушения. Можно присесть.',
         castMsg: 'ПРИЗВАЛА ТАРАН!',
         action(fighter) {
+          fighter.triggerSkillAnim(1);
           AudioSys.play('beam');
           game.projectiles.push(new ArayaRamShip(fighter, fighter.facing));
         }
@@ -611,6 +621,7 @@ const CHARACTERS_DATA = [
         desc: 'Призрачный корабль-щит с 30 HP. Поглощает атаки и снаряды.',
         castMsg: 'ПРИЗВАЛА БАРЬЕР!',
         action(fighter) {
+          fighter.triggerSkillAnim(2);
           AudioSys.play('beam');
           game.barrierShip = new ArayaBarrierShip(fighter, fighter.facing);
         }
@@ -630,6 +641,16 @@ const CHARACTERS_DATA = [
     speed: 9,
     punchDmg: 10,
     kickDmg: 14,
+    sprites: {
+      stand: 'sprites/lapis_stand.png',
+      crouch: 'sprites/lapis_crouch.png',
+      walk: ['sprites/lapis_walk1.png', 'sprites/lapis_walk2.png', 'sprites/lapis_walk3.png'],
+      jump: 'sprites/lapis_jump.png',
+      hurt: 'sprites/lapis_hurt.png',
+      skill1: 'sprites/lapis_skill1.png',
+      skill2: 'sprites/lapis_skill2.png',
+      skill3: 'sprites/lapis_skill3.png'
+    },
     skills: [
       {
         name: 'Орбиты',
@@ -638,6 +659,7 @@ const CHARACTERS_DATA = [
         desc: '2 защитные сферы вокруг. 8 ед. урона и отброс врага при касании.',
         castMsg: 'ОРБИТЫ!',
         action(fighter) {
+          fighter.triggerSkillAnim(0);
           AudioSys.play('beam');
           game.projectiles.push(new LapisOrbits(fighter));
         }
@@ -649,6 +671,7 @@ const CHARACTERS_DATA = [
         desc: 'Мощный шар по низу. 25 урона, отброс на 5м. Можно перепрыгнуть!',
         castMsg: 'РЕЛЬСОТРОН!',
         action(fighter) {
+          fighter.triggerSkillAnim(1);
           fighter.channelTimer = 0.3;
           AudioSys.play('explode');
           game.projectiles.push(new RailgunBall(fighter, fighter.facing));
@@ -661,6 +684,7 @@ const CHARACTERS_DATA = [
         desc: 'Шар притяжения. Двойной тап бега переносит к шару + 1с неуязвимости.',
         castMsg: 'ШАР ПРИТЯЖЕНИЯ!',
         action(fighter) {
+          fighter.triggerSkillAnim(2);
           AudioSys.play('beam');
           fighter.activeAttractionBall = new AttractionBall(fighter, fighter.facing);
           game.projectiles.push(fighter.activeAttractionBall);
@@ -670,9 +694,6 @@ const CHARACTERS_DATA = [
   }
 ];
 
-/* ==========================================================================
-   БЛОК 5: СЕТЕВОЙ МОДУЛЬ (PEERJS)
-   ========================================================================== */
 const Net = {
   peer: null,
   conn: null,
@@ -765,9 +786,6 @@ const Net = {
   }
 };
 
-/* ==========================================================================
-   БЛОК 6: ОБРАБОТКА ВВОДА И КЛАВИАТУРЫ
-   ========================================================================== */
 const Input = {
   keys: {},
   lastTapTimes: {},
@@ -828,9 +846,6 @@ const Input = {
 };
 Input.init();
 
-/* ==========================================================================
-   БЛОК 7: БАЗОВЫЕ ВИЗУАЛЬНЫЕ ЭЛЕМЕНТЫ (ЧАСТИЦЫ И ТЕКСТ)
-   ========================================================================== */
 class Particle {
   constructor(x, y, vx, vy, color, size, life) {
     this.x = x; this.y = y; this.vx = vx; this.vy = vy;
@@ -863,10 +878,6 @@ class FloatingText {
   }
 }
 
-/* ==========================================================================
-   БЛОК 8: КЛАСС БОЙЦА (FIGHTER CLASS)
-   (Интегрирована поддержка отрисовки растровых спрайтов под высоту 94px)
-   ========================================================================== */
 class Fighter {
   constructor(data, isP2 = false, isCpu = false) {
     this.data = data;
@@ -879,7 +890,7 @@ class Fighter {
     this.pe = data.maxPe;
 
     this.width = 46;
-    this.baseHeight = 94; // Базовая высота персонажа
+    this.baseHeight = 94;
     this.x = isP2 ? 850 : 250;
     this.y = currentArena.floorY;
     this.vx = 0;
@@ -899,7 +910,13 @@ class Fighter {
     this.activeAttack = null;
     this.attackCooldown = 0;
     this.activeAttractionBall = null;
-    this.customImg = null; // Кэш для HTMLImageElement спрайта
+
+    // Таймер и состояние анимации навыка
+    this.activeSkillState = null;
+    this.skillAnimTimer = 0;
+
+    // Кеш изображений для спрайтов
+    this.imageCache = {};
   }
 
   getHitbox() {
@@ -945,11 +962,20 @@ class Fighter {
     return true;
   }
 
+  triggerSkillAnim(slotIndex) {
+    this.activeSkillState = 'skill' + (slotIndex + 1);
+    this.skillAnimTimer = 0.5;
+  }
+
   update(dt, opponent) {
     if (this.invulnerableTimer > 0) this.invulnerableTimer -= dt;
     if (this.stunTimer > 0) this.stunTimer -= dt;
     if (this.stunImmunityTimer > 0) this.stunImmunityTimer -= dt;
     if (this.attackCooldown > 0) this.attackCooldown -= dt;
+    if (this.skillAnimTimer > 0) {
+      this.skillAnimTimer -= dt;
+      if (this.skillAnimTimer <= 0) this.activeSkillState = null;
+    }
 
     for (let i = 0; i < 3; i++) {
       if (this.cooldowns[i] > 0) this.cooldowns[i] -= dt;
@@ -1174,6 +1200,41 @@ class Fighter {
     skill.action(this, opponent);
   }
 
+  // Метод выбора нужного спрайта в зависимости от ситуации
+  getActiveSpritePath() {
+    const sprites = this.data.sprites;
+    if (!sprites) return null;
+
+    if (this.stunTimer > 0) {
+      return sprites.hurt || sprites.stand;
+    }
+    if (!this.isGrounded) {
+      return sprites.jump || sprites.stand;
+    }
+    if (this.activeSkillState && sprites[this.activeSkillState]) {
+      return sprites[this.activeSkillState];
+    }
+    if (this.isCrouching) {
+      return sprites.crouch || sprites.stand;
+    }
+    if (Math.abs(this.vx) > 1 && this.isGrounded && Array.isArray(sprites.walk)) {
+      const frameIndex = Math.floor(performance.now() / 120) % sprites.walk.length;
+      return sprites.walk[frameIndex];
+    }
+    return sprites.stand;
+  }
+
+  getLoadedImage(path) {
+    if (!path) return null;
+    if (!this.imageCache[path]) {
+      const img = new Image();
+      img.src = path;
+      this.imageCache[path] = img;
+    }
+    const img = this.imageCache[path];
+    return (img.complete && img.naturalWidth > 0) ? img : null;
+  }
+
   draw(ctx) {
     ctx.save();
     if (this.invulnerableTimer > 0) {
@@ -1190,15 +1251,12 @@ class Fighter {
     ctx.ellipse(this.x, currentArena.floorY, halfW + 4, 6, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // ==========================================
-    // ОВЕРРАЙД ОТРИСОВКИ: РАСТРОВЫЙ СПРАЙТ ИЛИ КАПСУЛА
-    // ==========================================
-    if (this.data.imgSrc && !this.customImg) {
-      this.customImg = new Image();
-      this.customImg.src = this.data.imgSrc;
-    }
+    // Получаем путь к нужному спрайту для текущего состояния
+    const spritePath = this.getActiveSpritePath();
+    const spriteImg = this.getLoadedImage(spritePath);
 
-    if (this.customImg && this.customImg.complete) {
+    if (spriteImg) {
+      // РЕНДЕРИНГ РЕАЛЬНОГО PNG СПРАЙТА
       ctx.save();
       if (this.facing === -1) {
         ctx.translate(this.x, 0);
@@ -1207,14 +1265,16 @@ class Fighter {
       }
       
       const drawWidth = 75;
-      const drawHeight = this.baseHeight; // Жестко фиксировано в 94 пикселя
+      // Если приседаем, спрайт не сжимается искусственно в 2 раза, 
+      // так как уже нарисован вполовину роста (используем его естественные пропорции или curH)
+      const drawHeight = this.isCrouching ? (this.baseHeight * 0.5) : this.baseHeight; 
       const drawX = this.x - drawWidth / 2;
       const drawY = this.y - drawHeight;
 
-      ctx.drawImage(this.customImg, drawX, drawY, drawWidth, drawHeight);
+      ctx.drawImage(spriteImg, drawX, drawY, drawWidth, drawHeight);
       ctx.restore();
     } else {
-      // Запасной векторный вариант (если картинка не загружена)
+      // ФОЛЛБЕК (ГЕНЕРАЦИЯ ФОРМЫ), если файл спрайта не найден или не загрузился
       ctx.fillStyle = this.data.color;
       ctx.strokeStyle = this.stunImmunityTimer > 0 ? '#60a5fa' : '#ffffff';
       ctx.lineWidth = 3;
@@ -1239,7 +1299,6 @@ class Fighter {
       ctx.fillRect(eyeX, topY + 14, 14, 7);
     }
 
-    // Визуализация удара
     if (this.activeAttack) {
       ctx.fillStyle = '#ffff00';
       const ax = this.facing === 1 ? this.x + halfW : this.x - halfW - this.activeAttack.reach;
@@ -1248,7 +1307,6 @@ class Fighter {
     }
     ctx.restore();
 
-    // Плашка с именем прямо над бойцом
     ctx.save();
     ctx.font = 'bold 13px sans-serif';
     const tagText = `${this.isP2 ? 'P2' : 'P1'}: ${this.data.name}`;
@@ -1285,9 +1343,6 @@ class Fighter {
   }
 }
 
-/* ==========================================================================
-   БЛОК 9: СНАРЯДЫ И ПРИЗЫВНЫЕ ОБЪЕКТЫ
-   ========================================================================== */
 class YuzuhaTentacle {
   constructor(owner, dir) {
     this.type = 'tentacle';
@@ -1768,9 +1823,6 @@ function rectsIntersect(r1, r2) {
   return !(r2.x > r1.x + r1.w || r2.x + r2.w < r1.x || r2.y > r1.y + r1.h || r2.y + r2.h < r1.y);
 }
 
-/* ==========================================================================
-   БЛОК 10: ЯДРО ИГРЫ (GAME ENGINE)
-   ========================================================================== */
 const game = {
   canvas: document.getElementById('gameCanvas'),
   ctx: document.getElementById('gameCanvas').getContext('2d'),
@@ -2037,9 +2089,6 @@ const game = {
   }
 };
 
-/* ==========================================================================
-   БЛОК 11: УПРАВЛЕНИЕ ИНТЕРФЕЙСОМ (UI MODULE)
-   ========================================================================== */
 const UI = {
   init() {
     this.renderRoster();
