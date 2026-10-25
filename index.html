@@ -37,6 +37,8 @@
       display: block;
       width: 100%;
       height: 100%;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
     }
 
     .screen {
@@ -414,10 +416,9 @@ const CHARACTERS_DATA = [
     speed: 10,
     punchDmg: 10,
     kickDmg: 12,
-     sprites: {
-     sprites: {
-      stand: 'lapis_stand.png',
-      crouch: 'lapis_crouch.png',
+    sprites: {
+      stand: null,
+      crouch: null,
       walk: [null, null, null],
       jump: null,
       hurt: null,
@@ -499,10 +500,10 @@ const CHARACTERS_DATA = [
     sprites: {
       stand: null,
       crouch: null,
-      walk: [null, null, null],   // Если для ходьбы спрайтов пока нет (сработает фоллбек-генерация)
-      jump: null,                 // Для прыжка пока нет
-      hurt: null,                 // Для урона пока нет
-      skill1: null,               // Для скиллов пока нет
+      walk: [null, null, null],
+      jump: null,
+      hurt: null,
+      skill1: null,
       skill2: null,
       skill3: null
     },
@@ -582,10 +583,10 @@ const CHARACTERS_DATA = [
     sprites: {
       stand: null,
       crouch: null,
-      walk: [null, null, null],   // Если для ходьбы спрайтов пока нет (сработает фоллбек-генерация)
-      jump: null,                 // Для прыжка пока нет
-      hurt: null,                 // Для урона пока нет
-      skill1: null,               // Для скиллов пока нет
+      walk: [null, null, null],
+      jump: null,
+      hurt: null,
+      skill1: null,
       skill2: null,
       skill3: null
     },
@@ -642,12 +643,12 @@ const CHARACTERS_DATA = [
     punchDmg: 10,
     kickDmg: 14,
     sprites: {
-      stand: 'lapis_stand.png',   // Имя спрайта для положения стоя
-      crouch: 'lapis_crouch.png', // Имя спрайта для приседа
-      walk: [null, null, null],   // Если для ходьбы спрайтов пока нет (сработает фоллбек-генерация)
-      jump: null,                 // Для прыжка пока нет
-      hurt: null,                 // Для урона пока нет
-      skill1: null,               // Для скиллов пока нет
+      stand: 'lapis_stand.png',
+      crouch: 'lapis_crouch.png',
+      walk: [null, null, null],
+      jump: null,
+      hurt: null,
+      skill1: null,
       skill2: null,
       skill3: null
     },
@@ -911,11 +912,9 @@ class Fighter {
     this.attackCooldown = 0;
     this.activeAttractionBall = null;
 
-    // Таймер и состояние анимации навыка
     this.activeSkillState = null;
     this.skillAnimTimer = 0;
 
-    // Кеш изображений для спрайтов
     this.imageCache = {};
   }
 
@@ -1200,7 +1199,6 @@ class Fighter {
     skill.action(this, opponent);
   }
 
-  // Метод выбора нужного спрайта в зависимости от ситуации
   getActiveSpritePath() {
     const sprites = this.data.sprites;
     if (!sprites) return null;
@@ -1245,18 +1243,18 @@ class Fighter {
     const topY = this.y - curH;
     const halfW = this.width / 2;
 
-    // Тень на полу арены
+    // Тень на полу
     ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
     ctx.beginPath();
     ctx.ellipse(this.x, currentArena.floorY, halfW + 4, 6, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Получаем путь к нужному спрайту для текущего состояния
     const spritePath = this.getActiveSpritePath();
     const spriteImg = this.getLoadedImage(spritePath);
 
     if (spriteImg) {
-      // РЕНДЕРИНГ РЕАЛЬНОГО PNG СПРАЙТА
+      ctx.imageSmoothingEnabled = false;
+
       ctx.save();
       if (this.facing === -1) {
         ctx.translate(this.x, 0);
@@ -1265,16 +1263,13 @@ class Fighter {
       }
       
       const drawWidth = 75;
-      // Если приседаем, спрайт не сжимается искусственно в 2 раза, 
-      // так как уже нарисован вполовину роста (используем его естественные пропорции или curH)
-      const drawHeight = this.isCrouching ? (this.baseHeight * 0.5) : this.baseHeight; 
+      const drawHeight = this.baseHeight; 
       const drawX = this.x - drawWidth / 2;
       const drawY = this.y - drawHeight;
 
       ctx.drawImage(spriteImg, drawX, drawY, drawWidth, drawHeight);
       ctx.restore();
     } else {
-      // ФОЛЛБЕК (ГЕНЕРАЦИЯ ФОРМЫ), если файл спрайта не найден или не загрузился
       ctx.fillStyle = this.data.color;
       ctx.strokeStyle = this.stunImmunityTimer > 0 ? '#60a5fa' : '#ffffff';
       ctx.lineWidth = 3;
