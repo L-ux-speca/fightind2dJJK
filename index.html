@@ -734,7 +734,7 @@ const CHARACTERS_DATA = [
         name: 'Пузырьковый Барьер',
         cost: 18,
         cd: 8.0,
-        desc: 'Сфера с 30 HP. Перехватывает ВСЕ удары и снаряды, пока не лопнет.',
+        desc: 'Сфера с 30 HP на 7 секунд. Цезарь остаётся внутри, противник может перепрыгнуть.',
         castMsg: 'СОЗДАЛ БАРЬЕР!',
         action(fighter, opponent) {
           fighter.triggerSkillAnim(2);
@@ -1130,7 +1130,7 @@ const CHARACTERS_DATA = [
         action(f){f.triggerSkillAnim(0);game.projectiles.push(new ChiekoTornado(f));}},
       {name:'Солнечный удар',cost:15,cd:8,desc:'Через 0,5 с луч света ударяет в отмеченную область: 20 урона.',
         action(f,o){f.triggerSkillAnim(1);game.projectiles.push(new ChiekoSunbeam(f,o?.x ?? f.x+f.facing*160));}},
-      {name:'Ледяной блок',cost:12,cd:8,desc:'На 1 с ставит блок: атака по нему наносит врагу 10 урона и замедляет на 3 скорости на 4 с.',
+      {name:'Ледяной блок',cost:12,cd:8,desc:'На 3 с ставит блок: атака по нему наносит врагу 10 урона и замедляет на 3 скорости на 4 с.',
         action(f){f.triggerSkillAnim(2);game.projectiles.push(new ChiekoIceBlock(f));}}
     ]
   },
@@ -1342,7 +1342,7 @@ const Net = {
     } else if (data.type === 'SOUND') {
       if (!this.isHost) AudioSys.play(data.sound);
     } else if(data.type==='SKIP_FINISHER'&&this.isHost){
-      if(game.finisher)game.finisher.time=game.finisher.duration;
+      if(game.finisher?.winner===1)game.finisher.time=game.finisher.duration;
     } else if (data.type === 'ABORT') {
       game.abortMatchToSelect(false);
       this.resetReady();
@@ -1438,7 +1438,7 @@ const Input = {
           return;
         }
       }
-      if(e.code==='Enter'&&game.finisher){
+      if(e.code==='Enter'&&game.finisher&&game.canLocalFinish(game.finisher.winner)){
         e.preventDefault();
         if(Net.isOnline&&!Net.isHost)Net.send({type:'SKIP_FINISHER'});
         else game.finisher.time=game.finisher.duration;
@@ -1571,6 +1571,11 @@ class Fighter {
     this.smallDamageTimer = 0.25;
     this.smallDamageAccum = 0;
     this.aiDecisionTimer = 0;
+    this.aiMovementTimer = 0;
+    this.aiMovementStyle = 'approach';
+    this.aiHopCooldown = 0;
+    this.aiBlockTimer = 0;
+    this.aiCrouchTimer = 0;
 
     this.channelTimer = 0;
     this.channelSkill = null;
@@ -1629,6 +1634,37 @@ class Fighter {
     this.burnSource=source;
   }
 
+  heal(amount) {
+    if(this.hp<=0||amount<=0)return 0;
+    const before=this.hp;
+    this.hp=Math.min(this.maxHp,this.hp+amount);
+    return this.hp-before;
+  }
+
+  tryLastChance(damage) {
+    if(this.data.id!=='dio'||this.lastChanceUsed||this.hp<=0||damage<this.hp||
+       this.pe<30||game.modifier.noSkills)return false;
+    this.lastChanceUsed=true;
+    this.pe-=30;
+    this.hp=Math.min(this.maxHp,30);
+    this.invulnerableTimer=1;
+    this.stunTimer=0;
+    this.hitstunTimer=0;
+    this.channelTimer=0;
+    this.channelSkill=null;
+    game.addText('ПОСЛЕДНИЙ ШАНС · 30 HP',this.x,this.y-122,'#fde68a');
+    return true;
+  }
+
+  applyPeriodicDamage(damage,source) {
+    if(this.invulnerableTimer>0||this.hp<=0)return;
+    if(this.tryLastChance(damage))return;
+    const before=this.hp;
+    this.hp=Math.max(0,this.hp-damage);
+    if(source&&source!==this&&typeof source.registerHit==='function')
+      source.registerHit(before-this.hp,true);
+  }
+
   registerHit(damage, passive = false) {
     const stats = game.stats?.[this.isP2 ? 1 : 0];
     if (!stats || damage <= 0) return;
@@ -1655,7 +1691,7 @@ class Fighter {
     };
   }
 
-  takeDamage(dmg, knockback = 0, dir = 0, stun = 0, source = null) {
+  takeDamage(dmg, knockback = 0, dir = 0, stun = 0, source = null, flinch = true) {
     if (this.invulnerableTimer > 0) {
       if (this.statusTextTimer <= 0) {
         game.addText(getGenderWord(this.data.gender, 'НЕУЯЗВИМ', 'НЕУЯЗВИМА'), this.x, this.y - this.baseHeight - 10, '#ffff00');
@@ -1698,13 +1734,7 @@ class Fighter {
       }
     }
 
-    if(!defending&&this.data.id==='dio'&&!this.lastChanceUsed&&this.pe>=30&&
-       !game.modifier.noSkills&&dmg>=this.hp&&this.hp>0){
-      this.lastChanceUsed=true;this.pe-=30;this.hp=Math.min(this.maxHp,30);
-      this.invulnerableTimer=1;this.stunTimer=0;this.hitstunTimer=0;
-      this.channelTimer=0;this.channelSkill=null;
-      game.addText('ПОСЛЕДНИЙ ШАНС +30 HP',this.x,this.y-122,'#fde68a');return false;
-    }
+    if(!defending&&this.tryLastChance(dmg))return false;
 
     const healthBefore = this.hp;
     this.hp = Math.max(0, this.hp - dmg);
@@ -1715,19 +1745,19 @@ class Fighter {
     }
     if (source && source !== this && typeof source.registerHit === 'function')
       source.registerHit(actual,!!game.procDamageDepth);
-    if(!defending&&actual>=3){
+    if(flinch&&!defending&&actual>=3){
       this.hitstunTimer=Math.max(this.hitstunTimer,Math.min(.32,.11+actual*.005));
       this.activeAttack=null;
       this.channelTimer=0;this.channelSkill=null;
     }
-    if(actual>=3)game.hitstopTimer=Math.max(game.hitstopTimer,Math.min(.09,.035+actual*.001));
-    if(actual>=18)game.cameraShake=Math.max(game.cameraShake,Math.min(8,actual*.2));
+    if(flinch&&actual>=3)game.hitstopTimer=Math.max(game.hitstopTimer,Math.min(.09,.035+actual*.001));
+    if(flinch&&actual>=18)game.cameraShake=Math.max(game.cameraShake,Math.min(8,actual*.2));
     if (dmg < 1) {
       this.smallDamageAccum += dmg;
     } else {
       game.addText(`-${Math.round(dmg)}`, this.x, this.y - this.baseHeight * 0.6, '#ff3344');
     }
-    if (this.hitFeedbackTimer <= 0) {
+    if (flinch&&this.hitFeedbackTimer <= 0) {
       const sound=defending?'block':actual>=18?'explode':'hit';
       AudioSys.play(sound);
       if (Net.isOnline && Net.isHost) Net.send({type:'SOUND',sound});
@@ -1805,17 +1835,14 @@ class Fighter {
 
     if (this.bleedTimer > 0) {
       this.bleedTimer -= dt;
-      const before = this.hp;
-      this.hp = Math.max(0, this.hp - this.bleedDps * game.modifier.damage * dt);
-      if (this.bleedSource && this.bleedSource !== this) this.bleedSource.registerHit(before-this.hp,true);
+      this.applyPeriodicDamage(this.bleedDps * game.modifier.damage * dt,this.bleedSource);
       if (Math.random() < 0.2) {
         game.particles.push(new Particle(this.x, this.y - 30, (Math.random()-0.5)*50, 40, '#ff0033', 3, 0.3));
       }
     }
     if(this.burnTimer>0){
-      this.burnTimer-=dt;const before=this.hp;
-      this.hp=Math.max(0,this.hp-this.burnDps*game.modifier.damage*dt);
-      if(this.burnSource&&this.burnSource!==this)this.burnSource.registerHit(before-this.hp,true);
+      this.burnTimer-=dt;
+      this.applyPeriodicDamage(this.burnDps*game.modifier.damage*dt,this.burnSource);
     }
 
     if(this.swarmTimer>0){
@@ -1889,7 +1916,8 @@ class Fighter {
           attack.timer > attack.totalDuration - attack.startup - attack.activeDuration) {
         this.checkMeleeCollision(opponent);
       }
-      if (this.activeAttack.timer <= 0) this.activeAttack = null;
+      // Контрудар или ледяной блок могут отменить атаку прямо во время проверки попадания.
+      if (this.activeAttack === attack && attack.timer <= 0) this.activeAttack = null;
     }
 
     if (!this.isFallingDive && !this.isTrainingDummy) {
@@ -2075,34 +2103,60 @@ class Fighter {
     const spd = this.data.speed * 25 * game.modifier.speed * (this.channelSkill ? 0.45 : 1);
     const dir = opponent.x > this.x ? 1 : -1;
     const ranged = ['yuzuha','caesar','araya','akira','david','lapis','chieko','airi','mechamaru','kisei'].includes(this.data.id);
-    const desired = ranged ? 185 : 56;
-    this.isBlocking = false;
-    if (!this.channelSkill && opponent.activeAttack && dist < 80 && Math.random() < 0.025 * dt * 60) this.isBlocking = true;
+    // Стили поведения меняются периодически: ИИ прессингует, коротко отступает и обманывает блоком.
+    // Даже дальнобойный противник не убегает бесконечно по открытой арене.
+    this.aiMovementTimer -= dt;
+    this.aiHopCooldown=Math.max(0,this.aiHopCooldown-dt);
+    this.aiBlockTimer=Math.max(0,this.aiBlockTimer-dt);
+    this.aiCrouchTimer=Math.max(0,this.aiCrouchTimer-dt);
+    if(this.aiMovementTimer<=0){
+      this.aiMovementTimer=1.1+Math.random()*2;
+      this.aiMovementStyle=Math.random()<(ranged ? .25 : .12)?'space':'approach';
+    }
+    const attacking=opponent.activeAttack&&dist<100;
+    if(attacking&&this.isGrounded&&!this.channelSkill){
+      if(opponent.activeAttack.type==='punch'&&Math.random()<.10*dt*60)
+        this.aiCrouchTimer=.25+Math.random()*.25;
+      else if(opponent.activeAttack.type==='kick'&&this.aiHopCooldown<=0&&Math.random()<.11*dt*60){
+        this.vy=-540;this.isGrounded=false;this.aiHopCooldown=2.5;
+      }
+      else if(Math.random()<.06*dt*60)this.aiBlockTimer=.22+Math.random()*.22;
+    }
     const incoming = game.projectiles.some(p => p.alive && p.owner !== this &&
       Number.isFinite(p.x) && Number.isFinite(p.vx) && p.vx !== 0 &&
       Math.abs(p.x - this.x) < 125 && Math.sign(p.vx) === Math.sign(this.x - p.x) &&
       (!Number.isFinite(p.y) || p.y > currentArena.floorY - 90));
-    if (incoming && this.isGrounded && !this.isBlocking && Math.random() < 0.12 * dt * 60) {
-      this.vy = -540;
-      this.isGrounded = false;
+    if(incoming&&this.isGrounded&&this.aiHopCooldown<=0&&Math.random()<.12*dt*60){
+      this.vy=-540;this.isGrounded=false;this.aiHopCooldown=2.2;
     }
-    if (this.isBlocking) { this.vx = 0; return; }
+    if(this.aiHopCooldown<=0&&this.isGrounded&&dist>125&&dist<380&&
+       Math.random()<.004*dt*60&&!this.channelSkill&&!this.activeAttack){
+      this.vy=-540;this.isGrounded=false;this.aiHopCooldown=2+Math.random()*2;
+    }
+    this.isCrouching=this.isGrounded&&this.aiCrouchTimer>0;
+    this.isBlocking=this.isGrounded&&!this.isCrouching&&this.aiBlockTimer>0&&
+      this.pe>0&&this.guardBrokenTimer<=0;
+    if (this.isBlocking||this.isCrouching) { this.vx = 0; return; }
     if (this.knockbackTimer <= 0) {
-      if (dist > desired + 35) this.vx = dir * spd;
-      else if (ranged && dist < desired - 35) this.vx = -dir * spd * 0.8;
-      else this.vx *= Math.pow(0.65, dt * 60);
+      const standOff=ranged?83:56;
+      const canStepBack=this.aiMovementStyle==='space'&&dist<65&&
+        !(game.mode==='arcade'&&currentArena.infinite);
+      if(dist>standOff+8)this.vx=dir*spd;
+      else if(canStepBack)this.vx=-dir*spd*.42;
+      else this.vx*=Math.pow(.55,dt*60);
     }
     this.aiDecisionTimer -= dt;
     if (this.aiDecisionTimer > 0 || this.attackCooldown > 0 || this.channelSkill) return;
-    this.aiDecisionTimer = 0.3 + Math.random() * 0.2;
+    this.aiDecisionTimer = .21 + Math.random() * .22;
     const ready = this.data.skills.map((skill,i) => ({skill,i}))
-      .filter(({skill,i}) => this.pe >= skill.cost && this.cooldowns[i] <= 0 &&
+      .filter(({skill,i}) => !skill.passive&&this.pe >= skill.cost && this.cooldowns[i] <= 0 &&
         !(this.data.id === 'tori' && i === 2 && this.isGrounded && !this.isFlying));
-    if (ready.length && Math.random() < (ranged ? 0.72 : 0.38)) {
+    const useSkill=ready.length&&Math.random()<(dist>110?(ranged ? .65 : .36):.28);
+    if (useSkill) {
       const selected = ready[Math.floor(Math.random() * ready.length)];
       this.castSkill(selected.i, opponent);
-    } else if (dist < 85) {
-      this.startBasicAttack(Math.random() < 0.55 ? 'punch' : 'kick');
+    } else if(dist<99){
+      this.startBasicAttack(this.data.noKick||Math.random()<.52?'punch':'kick');
     }
   }
 
@@ -2136,24 +2190,26 @@ class Fighter {
   }
 
   checkMeleeCollision(target) {
-    if (!this.activeAttack) return;
-    const curH = this.isCrouching ? this.baseHeight * 0.5 : this.baseHeight;
+    const attack = this.activeAttack;
+    if (!attack) return;
+    // Удар рукой проходит на уровне головы: приседание позволяет от него уйти.
+    // Удар ногой проходит низко: достаточный прыжок позволяет его избежать.
     const hitBox = {
-      x: this.facing === 1 ? this.x + this.width / 2 : this.x - this.width / 2 - this.activeAttack.reach,
-      y: this.y - curH * 0.7,
-      w: this.activeAttack.reach,
-      h: 35
+      x: this.facing === 1 ? this.x + this.width / 2 : this.x - this.width / 2 - attack.reach,
+      y: this.y - (attack.type==='punch'?83:39),
+      w: attack.reach,
+      h: attack.type==='punch'?29:32
     };
 
-    if (game.interceptDamage(hitBox, this.activeAttack.dmg, this)) {
-      this.activeAttack.hasHit = true;
+    if (game.interceptDamage(hitBox, attack.dmg, this)) {
+      attack.hasHit = true;
       this.pe = Math.min(this.maxPe, this.pe + 2);
       return;
     }
 
     if (target && rectsIntersect(hitBox, target.getHitbox())) {
-      target.takeDamage(this.activeAttack.dmg, this.activeAttack.knockback, this.facing,0,this);
-      this.activeAttack.hasHit = true;
+      target.takeDamage(attack.dmg, attack.knockback, this.facing,0,this);
+      attack.hasHit = true;
       this.pe = Math.min(this.maxPe, this.pe + 2);
     }
   }
@@ -2525,8 +2581,12 @@ class SonicClone {
   update(dt, opponent) {
     this.life -= dt;
     if (this.attackCd > 0) this.attackCd -= dt;
+    if(!this.target||this.target.hp<=0){this.alive=false;return;}
     const dist = this.target.x - this.x;
-    this.x += Math.sign(dist) * 160 * dt;
+    // Не заходим внутрь тела цели. Урон по-прежнему зависит от реального ударного хитбокса.
+    const safeDistance=this.target.width/2+20+2;
+    if(Math.abs(dist)>safeDistance)
+      this.x+=Math.sign(dist)*Math.min(160*dt,Math.abs(dist)-safeDistance);
 
     if (Math.abs(dist) < 52 && this.attackCd <= 0) {
       const dir = Math.sign(dist) || 1;
@@ -2707,6 +2767,7 @@ class BubbleBarrier {
     this.radius = 75;
     this.hp = 30;
     this.active = true;
+    this.life = 7;
   }
   getBox() {
     return { x: this.x - this.radius, y: this.y - this.radius, w: this.radius * 2, h: this.radius * 2 };
@@ -2715,12 +2776,28 @@ class BubbleBarrier {
     this.hp -= dmg;
     if (this.hp <= 0) this.active = false;
   }
+  update(dt){
+    if(!this.active)return;
+    this.life-=dt;
+    if(this.life<=0)this.active=false;
+  }
   constrainFighter(fighter) {
-    if (!this.active || fighter === this.owner) return;
+    if(!this.active)return;
+    if(fighter===this.owner){
+      // Цезарь заперт внутри собственной сферы, в том числе при прыжке.
+      const maxX=this.radius-fighter.width/2-20;
+      fighter.x=Math.max(this.x-maxX,Math.min(this.x+maxX,fighter.x));
+      const ceiling=this.y-this.radius+fighter.baseHeight+6;
+      if(fighter.y<ceiling){fighter.y=ceiling;fighter.vy=Math.max(0,fighter.vy);}
+      return;
+    }
+    // В воздухе можно перескочить стенку: не телепортируем бойца обратно при прыжке.
+    if(!fighter.isGrounded&&fighter.y<currentArena.floorY-42)return;
     const dx = fighter.x - this.x;
     const dist = Math.abs(dx);
-    if (dist < this.radius + 20) {
-      fighter.x = this.x + Math.sign(dx) * (this.radius + 20);
+    if (dist < this.radius + fighter.width/2) {
+      const side=Math.sign(dx)||-this.owner.facing;
+      fighter.x = this.x + side * (this.radius + fighter.width/2);
       fighter.vx = 0;
     }
   }
@@ -2977,7 +3054,7 @@ class ChiekoSunbeam {
 }
 class ChiekoIceBlock {
   constructor(owner){this.owner=owner;this.x=owner.x+owner.facing*75;this.y=currentArena.floorY;
-    this.life=1;this.alive=true;this.reflected=false;}
+    this.life=3;this.alive=true;this.reflected=false;}
   getBox(){return{x:this.x-24,y:this.y-95,w:48,h:95};}
   onAttack(attacker){if(!this.alive||this.reflected)return;
     this.reflected=true;attacker.slowTimer=4;
@@ -3006,7 +3083,10 @@ class MetalClone extends SonicClone {
   constructor(owner,target){super(owner,owner.x+owner.facing*45,target);this.type='metal_clone';this.life=9;this.attackCd=.6;}
   update(dt){this.life-=dt;this.attackCd-=dt;
     if(!this.target||this.target.hp<=0){this.alive=false;return;}
-    const dist=this.target.x-this.x;this.x+=Math.sign(dist)*this.owner.data.speed*20*dt;
+    const dist=this.target.x-this.x;
+    const safeDistance=this.target.width/2+20+2;
+    if(Math.abs(dist)>safeDistance)
+      this.x+=Math.sign(dist)*Math.min(this.owner.data.speed*20*dt,Math.abs(dist)-safeDistance);
     const dir=Math.sign(dist)||1;
     const box={x:dir>0?this.x+12:this.x-48,y:this.y-70,w:36,h:40};
     if(Math.abs(dist)<55&&this.attackCd<=0){if(!game.interceptDamage(box,10,this.owner)&&
@@ -3037,10 +3117,12 @@ class DioVampireStrike {
     const f=this.owner,box={x:this.dir>0?f.x+20:f.x-94,y:f.y-73,w:74,h:35};
     if(!this.hit){if(game.interceptDamage(box,10,f))this.hit=true;
       else if(opponent&&rectsIntersect(box,opponent.getHitbox())){
-        const blocked=opponent.isBlocking&&opponent.facing===-this.dir;
-        if(opponent.takeDamage(10,10,this.dir,0,f)&&!blocked){
-          f.hp=Math.min(f.maxHp,f.hp+8);f.vampireTimer=5;
-          game.addText('+8 HP · УРОН ×2',f.x,f.y-120,'#f87171');
+        const blocked=opponent.isBlocking&&opponent.facing===-this.dir&&opponent.pe>0;
+        const hpBefore=opponent.hp;
+        if(opponent.takeDamage(10,10,this.dir,0,f)&&opponent.hp<hpBefore&&!blocked){
+          const healed=f.heal(8);
+          f.vampireTimer=5;
+          game.addText(healed?`+${Math.round(healed)} HP · УРОН ×2`:'УРОН ×2',f.x,f.y-120,'#f87171');
         }this.hit=true;}}
     if(this.life<=0)this.alive=false;}
   draw(c){c.save();const f=this.owner;c.fillStyle='rgba(248,54,72,.8)';
@@ -3080,7 +3162,7 @@ class MechamaruDamagePoint {
   constructor(owner,x,y){this.owner=owner;this.x=x;this.y=y;this.life=.1;this.alive=true;this.hit=false;}
   update(dt,opponent){this.life-=dt;if(!this.hit){const box={x:this.x-13,y:this.y-13,w:26,h:26};
     if(!game.interceptDamage(box,4,this.owner)&&opponent&&rectsIntersect(box,opponent.getHitbox()))
-      opponent.takeDamage(4,0,0,0,this.owner);this.hit=true;}
+      opponent.takeDamage(4,0,0,0,this.owner,false);this.hit=true;}
     if(this.life<=0)this.alive=false;}
   draw(c){c.save();c.fillStyle='#1ac8ff';c.beginPath();c.arc(this.x,this.y,13,0,Math.PI*2);c.fill();c.restore();}
 }
@@ -3472,9 +3554,28 @@ const game = {
   beginKnockout(winner){
     if(this.finisher||this.finisherOpportunity||this.roundPause>0||this.matchOver)return;
     if(winner===null){this.finishRound(null);return;}
-    this.finisherOpportunity={winner,time:3};
+    if(['cpu','arcade','survival'].includes(this.mode)){
+      // В одиночных режимах добивание запускается сразу, даже если выиграл ИИ.
+      this.finisherOpportunity={winner,time:0};
+      this.beginFinisher(winner);
+      return;
+    }
+    this.finisherOpportunity={winner,time:3,
+      awaitRelease:this.finisherPressed(winner)};
     this.hitstopTimer=0;
     this.announcement='ДОБЕЙ ЕГО!';this.announcementTimer=3;
+  },
+
+  canLocalFinish(winner){
+    return this.mode!=='online'||winner===(Net.isHost?0:1);
+  },
+
+  finisherPressed(winner){
+    if(this.mode==='online'){
+      return winner===1?!!Net.remoteClientInputs?.finish:
+        Input.isDown(Controls.code(0,'finish'));
+    }
+    return Input.isDown(Controls.code(winner,'finish'));
   },
 
   beginFinisher(winner){
@@ -3616,6 +3717,26 @@ const game = {
     }
   },
 
+  separateSummons(){
+    // Физическое столкновение с металлическим двойником, теневыми клонами и куклой.
+    // Призыв не может занимать то же пространство, что и вражеский боец на земле.
+    for(const summon of this.projectiles){
+      if(!summon.alive||
+         !(summon instanceof SonicClone || summon instanceof MechamaruPuppet) ||
+         summon.mounted)continue;
+      const target=summon.owner===this.player1?this.player2:this.player1;
+      const body=summon.getHitbox?.()||summon.getBox?.();
+      if(!body||!rectsIntersect(body,target.getHitbox()))continue;
+      const diff=target.x-summon.x;
+      const side=Math.sign(diff)||Math.sign(target.vx)||-summon.owner.facing;
+      const boundary=side>0?body.x+body.w+target.width/2+1:
+        body.x-target.width/2-1;
+      target.x=currentArena.infinite?boundary:
+        Math.max(target.width/2,Math.min(currentArena.width-target.width/2,boundary));
+      if(Math.sign(target.vx)===-side)target.vx=0;
+    }
+  },
+
   addText(text, x, y, color = '#fff') {
     this.floatingTexts.push(new FloatingText(text, x, y, color));
   },
@@ -3671,9 +3792,9 @@ const game = {
     }
     if(this.finisherOpportunity){
       const f=this.finisherOpportunity,w=f.winner;
-      const pressed=(this.mode==='online'&&w===1) ? !!Net.remoteClientInputs?.finish :
-        Input.isDown(Controls.code(this.mode==='online'?0:w,'finish'));
-      if(pressed){this.beginFinisher(w);}
+      const pressed=this.finisherPressed(w);
+      if(!pressed)f.awaitRelease=false;
+      if(pressed&&!f.awaitRelease){this.beginFinisher(w);}
       else {f.time-=dt;if(f.time<=0){this.finisherOpportunity=null;this.finishRound(w);}}
       this.updateEffects(dt);this.updateHUD();this.sendSnapshotIfNeeded(dt);return;
     }
@@ -3729,6 +3850,8 @@ const game = {
       p.update(dt, opp);
       if (!p.alive) this.projectiles.splice(i, 1);
     }
+    this.separateSummons();
+    if(this.bubbleBarrier?.active)this.bubbleBarrier.update(dt);
 
     if (this.mode === 'training') {
       for (const fighter of [this.player1,this.player2]) {
@@ -3890,9 +4013,12 @@ const game = {
     const finisherLabel=document.getElementById('finisher-prompt');
     if(this.finisherOpportunity){
       const winner=this.finisherOpportunity.winner;
-      const player=this.mode==='online'?0:winner;
-      finisherLabel.textContent=`ДОБЕЙ!  [${Controls.friendly(Controls.code(player,'finish'))}]  ${this.finisherOpportunity.time.toFixed(1)}с`;
-    }else if(this.finisher)finisherLabel.textContent='ДОБИВАНИЕ! · Enter — пропустить';
+      if(this.canLocalFinish(winner)){
+        const player=this.mode==='online'?0:winner;
+        finisherLabel.textContent=`ДОБЕЙ!  [${Controls.friendly(Controls.code(player,'finish'))}]  ${this.finisherOpportunity.time.toFixed(1)}с`;
+      }else finisherLabel.textContent='ПРОТИВНИК МОЖЕТ ВЫПОЛНИТЬ ДОБИВАНИЕ';
+    }else if(this.finisher)finisherLabel.textContent=this.canLocalFinish(this.finisher.winner)?
+      'ДОБИВАНИЕ! · Enter — пропустить':'ДОБИВАНИЕ ПРОТИВНИКА';
     else finisherLabel.textContent='';
     const combos=[];
     if (this.player1.comboCount >= 2) combos.push(`P1: ${this.player1.comboCount} HIT`);
