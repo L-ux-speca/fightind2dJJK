@@ -208,6 +208,8 @@
     .rule-chip input { accent-color:#26cbaa; }
     #finisher-prompt { position:absolute;top:42%;left:50%;transform:translate(-50%,-50%);z-index:9;
       text-align:center;font-weight:900;font-size:clamp(26px,4vw,54px);color:#ffd76d;text-shadow:0 3px 14px #000;pointer-events:none; }
+    #finisher-prompt.finisher-skip { top:116px;left:16px;transform:none;text-align:left;
+      font-size:13px;font-weight:600;letter-spacing:0;color:#dce9fb;text-shadow:0 1px 4px #000; }
     #training-panel { position:absolute;left:12px;bottom:42px;z-index:7;background:rgba(5,12,24,.92);
       padding:9px;border:1px solid #46638e;border-radius:7px;pointer-events:auto;font-size:12px; }
     #training-panel select { color:#fff;background:#172c46;padding:5px; }
@@ -217,6 +219,37 @@
     #round-notice { position:absolute; top:32%; left:50%; transform:translateX(-50%); z-index:7; font-size:clamp(22px,4vw,46px); text-align:center; font-weight:900; text-shadow:0 3px 12px #000; color:#fff6bf; pointer-events:none; }
     #combo-label { position:absolute; top:35%; left:5%; z-index:6; color:#ffe477; font-size:25px; font-weight:900; text-shadow:2px 3px #111; pointer-events:none; }
     #match-summary { color:#d2e5f6; padding:12px 20px; margin-bottom:12px; border:1px solid #304665; border-radius:8px; background:rgba(8,13,26,.9); font-size:14px; text-align:center; }
+    .builder-root { width:min(1050px,96vw); max-height:94dvh; overflow:auto; padding:18px;
+      background:#10172b; border:1px solid #3a5e91; border-radius:12px; box-shadow:0 15px 40px #0008; }
+    .builder-root h2 { color:#7ee4ff; margin-bottom:5px; }
+    .builder-toolbar { display:flex; flex-wrap:wrap; align-items:end; gap:10px; margin:15px 0; }
+    .builder-toolbar label { display:flex; flex-direction:column; gap:5px; color:#acc5e0; font-size:12px; }
+    .builder-root select,.builder-root input,.builder-root textarea { min-height:34px; border:1px solid #4e6592; background:#0a1020;
+      color:#fff; border-radius:6px; padding:6px 8px; accent-color:#3dd9e7; }
+    .builder-toolbar select { min-width:170px; max-width:300px; }
+    .builder-assistant { margin:12px 0; padding:12px; border:1px solid #456e90;
+      background:linear-gradient(120deg,#172847,#12172e); border-radius:9px; }
+    .builder-assistant h3 { color:#a8eeff; font-size:15px; margin:0 0 6px; }
+    .builder-assistant textarea { width:100%; resize:vertical; min-height:62px; box-sizing:border-box;
+      font-size:13px; line-height:1.45; font-family:inherit; margin-top:8px; }
+    .builder-assistant button { padding:8px 12px; margin:8px 8px 0 0;
+      color:#fff; background:#195c70; border:1px solid #57c0da; border-radius:6px; cursor:pointer; }
+    .builder-assistant-note { margin-top:8px; color:#b4d2e3; font-size:12px; line-height:1.5; }
+    .builder-summary { padding:10px 12px; background:#102c3a; border:1px solid #2c8093;
+      border-radius:8px; color:#ccefff; font-size:13px; line-height:1.7; }
+    .builder-summary.error { background:#3d1725; border-color:#ca4e64; color:#ffd5dc; }
+    .builder-steps { display:flex; flex-direction:column; gap:9px; margin:13px 0; }
+    .builder-step { display:flex; flex-wrap:wrap; align-items:end; gap:8px; border:1px solid #334b73;
+      background:#17213a; padding:11px; border-radius:8px; }
+    .builder-step label { display:flex; flex-direction:column; gap:4px; font-size:11px; color:#a9c7e7; }
+    .builder-step input[type=number] { width:72px; }
+    .builder-step input[type=range] { width:102px; padding:3px; }
+    .builder-step .index { color:#74eaff; font-weight:bold; align-self:center; padding-right:3px; }
+    .builder-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+    .builder-actions button { padding:10px 13px; border-radius:6px; color:#fff; border:1px solid #40719b;
+      background:#1a3657; cursor:pointer; font-weight:bold; }
+    .builder-actions .primary { background:#12645b; border-color:#37d7bd; }
+    .builder-tip { color:#8bb7cd; font-size:12px; margin-top:10px; line-height:1.5; }
     @media (max-width: 850px) {
       h1.title { font-size: clamp(23px, 5vw, 46px); }
       .roster-grid { grid-template-columns: repeat(2, minmax(130px,1fr)); }
@@ -251,6 +284,7 @@
         </div>
         <div class="bar-bg guard-bar-bg" title="Стойкость защиты"><div class="guard-bar" id="p1-guard" style="width:100%"></div></div>
         <div class="skills-cd-row" id="p1-cds"></div>
+        <div class="skills-cd-row" id="p1-custom-cds"></div>
       </div>
 
       <div class="round-center"><div class="timer-box" id="match-timer">120</div><div id="round-score">Раунд 1 · 0 : 0</div></div>
@@ -267,6 +301,7 @@
         </div>
         <div class="bar-bg guard-bar-bg" title="Стойкость защиты"><div class="guard-bar" id="p2-guard" style="width:100%"></div></div>
         <div class="skills-cd-row" id="p2-cds"></div>
+        <div class="skills-cd-row" id="p2-custom-cds"></div>
       </div>
     </div>
     <div id="round-notice"></div>
@@ -298,6 +333,7 @@
     <button class="menu-btn" onclick="UI.startSelection('arcade')">Аркада · 5 боёв против ИИ</button>
     <button class="menu-btn" onclick="UI.startSelection('survival')">Выживание · бесконечные волны</button>
     <button class="menu-btn" onclick="UI.startSelection('tournament')">Турнир · сетка на 8 бойцов</button>
+    <button class="menu-btn accent" onclick="MoveBuilder.open()">Конструктор авторских приёмов</button>
     <button class="menu-btn" onclick="UI.openControls()">Настройки управления</button>
     <button class="menu-btn" onclick="UI.toggleFullscreen()">Полный экран</button>
     <button class="menu-btn" onclick="UI.toggleScreen('screen-settings', true)">Справка и Баланс</button>
@@ -313,6 +349,38 @@
       </div>
       <div class="status-text" id="host-status">Ожидание подключения соперника...</div>
       <button class="menu-btn" style="width: 100%; margin: 5px 0;" onclick="UI.cancelNetworkLobby()">Отмена</button>
+    </div>
+  </div>
+
+  <div id="screen-builder" class="screen hidden">
+    <div class="builder-root">
+      <h2>Конструктор авторских приёмов</h2>
+      <p class="builder-tip">Создавай новые действия из элементов техники персонажа. Урон, дальность, количество объектов и продолжительность увеличивают бюджет мощности и цену в ПЭ.</p>
+      <div class="builder-toolbar">
+        <label>Персонаж<select id="builder-character" onchange="MoveBuilder.chooseCharacter(this.value)"></select></label>
+        <label>Слот (0–5)<select id="builder-slot" onchange="MoveBuilder.chooseSlot(this.value)"></select></label>
+        <label>Название<input id="builder-name" type="text" maxlength="28" placeholder="Название приёма" oninput="MoveBuilder.setName(this.value)"></label>
+      </div>
+      <div class="builder-summary" id="builder-summary"></div>
+      <div class="builder-assistant">
+        <h3>Помощник создания приёмов</h3>
+        <p class="builder-tip">Опиши замысел: «Кисей: рыцарь бьёт в голову, затем огненный Анх поражает место противника». Алгоритм подберёт действия, задержки и стоимость; всё можно изменить вручную.</p>
+        <textarea id="builder-idea" maxlength="500" placeholder="Например: призвать стража для защиты, потом выпустить три снаряда по противнику"></textarea>
+        <button onclick="MoveBuilder.generateFromIdea()">Собрать из описания</button>
+        <button onclick="MoveBuilder.generateFromIdea(true)">Другой вариант</button>
+        <div id="builder-advice" class="builder-assistant-note">Работает без интернета. Распознаёт действия и формы техники, а не произвольные команды.</div>
+      </div>
+      <div id="builder-steps" class="builder-steps"></div>
+      <div class="builder-actions">
+        <button onclick="MoveBuilder.addStep()">+ Добавить действие</button>
+        <button class="primary" onclick="MoveBuilder.save()">Сохранить слот</button>
+        <button onclick="MoveBuilder.test()">Испытать на манекене</button>
+        <button onclick="MoveBuilder.exportMove()">Экспорт</button>
+        <button onclick="MoveBuilder.importMove()">Импорт</button>
+        <button onclick="MoveBuilder.clear()">Очистить слот</button>
+        <button onclick="MoveBuilder.close()">В главное меню</button>
+      </div>
+      <p class="builder-tip">В бою: <b>Shift + 1…6</b> — авторские слоты 0–5. Действуют во всех режимах, кроме «2 игрока (один ПК)». Получение сильного удара может прервать последовательность.</p>
     </div>
   </div>
 
@@ -338,7 +406,7 @@
         <label>Матч <select id="rounds-choice" onchange="UI.chooseRounds(this.value)">
           <option value="1">1 раунд</option><option value="2" selected>До 2 побед</option><option value="3">До 3 побед</option>
         </select></label>
-        <label>Правил в рулетке <select id="roulette-count"><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></label>
+        <label>Правил в рулетке <select id="roulette-count"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></label>
         <button onclick="UI.randomFighters()">🎲 Случайные бойцы</button>
         <button onclick="UI.spinRoulette()">🎰 Рулетка правил</button>
         <button onclick="UI.resetRoulette()">Обычные правила</button>
@@ -368,7 +436,8 @@
       <h2 style="color: #fff; margin-bottom: 10px;">Баланс боя и правила приемов</h2>
       <p><b>Энергия и удары:</b> Пассивный прирост 0.5 ПЭ/сек. Обычные удары руками (Z) и ногами (X) восполняют <b>+2 ПЭ</b>.</p>
       <p><b>Защита от станлока:</b> После любого оглушения персонаж получает <b>1.5 секунды иммунитета</b> к повторному оглушению.</p>
-      <p><b>Уклонение приседанием:</b> Присед уменьшает хитбокс в 2 раза.</p>
+      <p><b>Уклонения:</b> Приседание позволяет уйти от удара рукой, прыжок — от низкого удара ногой.</p>
+      <p><b>Авторские приёмы:</b> Главный экран → «Конструктор авторских приёмов». Настрой элементы техники в рамках бюджета 70. В бою удерживай Shift и нажимай 1–6. Слоты 0–5 отключены в локальном 1 на 1.</p>
       <div id="help-characters-content"></div>
       <button class="menu-btn" style="margin-top: 20px; width: 100%;" onclick="UI.toggleScreen('screen-settings', false); UI.toggleScreen('screen-menu', true);">Закрыть</button>
     </div>
@@ -584,6 +653,12 @@ const MATCH_MODIFIERS = [
   {id:'half_hp',name:'Половина здоровья',damage:1,speed:1,peRegen:1,gravity:1,startHpScale:.5},
   {id:'no_regen',name:'Нет регенерации ПЭ',damage:1,speed:1,peRegen:0,gravity:1}
 ];
+const MAX_ACTIVE_RULES = 5;
+function normalizeRuleIndices(indices) {
+  if (!Array.isArray(indices)) return [];
+  return [...new Set(indices.filter(i=>Number.isInteger(i)&&i>0&&i<MATCH_MODIFIERS.length))]
+    .slice(0,MAX_ACTIVE_RULES).sort((a,b)=>a-b);
+}
 
 function getGenderWord(gender, maleWord, femaleWord) {
   return gender === 'f' ? femaleWord : maleWord;
@@ -1205,6 +1280,435 @@ const CHARACTERS_DATA = [
   }
 ];
 
+// Конструктор НОВЫХ приёмов: каждый персонаж получает только совместимые с его техникой элементы.
+// Данные состоят из проверяемых инструкций, а не исполняемого пользовательского JavaScript.
+const CUSTOM_ACTION_TYPES = {
+  projectile:{name:'Снаряд',base:5,usesRange:true,usesSize:true,usesCount:true},
+  orbit:{name:'Орбитальные объекты',base:8,usesSize:true,usesCount:true,usesDuration:true},
+  field:{name:'Локальная зона',base:9,usesRange:true,usesSize:true,usesDuration:true},
+  pulse:{name:'Импульс / взрыв',base:8,usesSize:true},
+  shield:{name:'Защитное поле',base:9,usesSize:true,usesDuration:true},
+  dash:{name:'Направленный рывок',base:6,usesRange:true},
+  heal:{name:'Восстановление HP',base:12},
+  summon:{name:'Призыв',base:15,usesDuration:true}
+};
+const CUSTOM_PALETTES = {
+  yuzuha:['projectile','orbit','field','shield','pulse'],
+  caesar:['projectile','orbit','shield','pulse','field'],
+  araya:['projectile','field','pulse','shield'],
+  lapis:['projectile','orbit','field','pulse','shield','dash'],
+  tori:['projectile','dash','pulse','heal','field'],
+  akira:['projectile','orbit','field','pulse'],
+  sonic:['projectile','dash','pulse','summon'],
+  david:['projectile','field','pulse','shield'],
+  chieko:['projectile','field','shield','pulse'],
+  airi:['projectile','field','shield','summon','orbit'],
+  dio:['projectile','dash','pulse','shield'],
+  kayano:['projectile','dash','pulse','field'],
+  mechamaru:['projectile','field','pulse','shield','summon'],
+  kisei:['projectile','field','pulse','summon']
+};
+// Отдельные формы шикигами Кисея с разной логикой поведения в бою.
+const CUSTOM_KISEI_FORMS = {
+  car:{name:'Колесо Фортуны · таран по ногам',extra:3},
+  knight:{name:'Серебряный Рыцарь · выпад в голову',extra:2},
+  ankh:{name:'Огненный Анх · навесной удар',extra:4},
+  emperor:{name:'Император · очередь пуль',extra:5},
+  guardian:{name:'Страж · защищающий шикигами',extra:7}
+};
+
+const TechniqueSystem = {
+  storageKey:'clash-technique-builder-v1',
+  budgetLimit:70,
+  maxSteps:6,
+  slots:6,
+  library:{},
+  getCharacter(id){return CHARACTERS_DATA.find(c=>c.id===id)||null;},
+  defaultStep(type='projectile',at=0){return{type,at,power:2,range:2,size:2,duration:2,count:1,
+    aim:'forward',condition:'always',form:'generic'};},
+  normalizeStep(raw,characterId){
+    if(!raw||typeof raw!=='object'||!CUSTOM_PALETTES[characterId]?.includes(raw.type))return null;
+    const int=(v,min,max,defaultValue)=>{
+      const number=Number(v);
+      return Number.isFinite(number)?Math.max(min,Math.min(max,Math.round(number))):defaultValue;
+    };
+    const at=Number(raw.at);
+    if(!Number.isFinite(at))return null;
+    return{
+      type:raw.type,
+      at:Math.round(Math.max(0,Math.min(3,at))*10)/10,
+      power:int(raw.power,1,5,2),range:int(raw.range,1,5,2),
+      size:int(raw.size,1,5,2),duration:int(raw.duration,1,5,2),
+      count:int(raw.count,1,3,1),
+      aim:raw.aim==='target'?'target':'forward',
+      condition:['always','near','airborne','enemyAir','enemyCrouch','enemyGround'].includes(raw.condition)?raw.condition:'always',
+      form:characterId==='kisei'&&raw.type==='summon'?
+        (Object.prototype.hasOwnProperty.call(CUSTOM_KISEI_FORMS,raw.form)?raw.form:'car'):'generic'
+    };
+  },
+  stepBudget(step){
+    const type=CUSTOM_ACTION_TYPES[step.type];
+    if(!type)return Infinity;
+    let points=type.base+step.power*2;
+    if(type.usesRange)points+=step.range*1.5;
+    if(type.usesSize)points+=step.size;
+    if(type.usesDuration)points+=step.duration*1.4;
+    if(type.usesCount)points+=(step.count-1)*6;
+    if(step.aim==='target'&&type.usesRange)points+=6;
+    if(step.type==='summon'&&Object.prototype.hasOwnProperty.call(CUSTOM_KISEI_FORMS,step.form)){
+      points+=CUSTOM_KISEI_FORMS[step.form].extra+step.range+step.size+(step.count-1)*6;
+      if(step.aim==='target')points+=4;
+    }
+    if(step.condition!=='always')points+=2;
+    return Math.ceil(points);
+  },
+  compile(raw,characterId){
+    const fighter=this.getCharacter(characterId);
+    if(!fighter||!raw||!Array.isArray(raw.steps)||!raw.steps.length||
+      raw.steps.length>this.maxSteps)return null;
+    const steps=[];
+    for(const rawStep of raw.steps){
+      const step=this.normalizeStep(rawStep,characterId);
+      if(!step)return null;
+      steps.push(step);
+    }
+    steps.sort((a,b)=>a.at-b.at);
+    const budget=steps.reduce((sum,step)=>sum+this.stepBudget(step),0);
+    if(budget>this.budgetLimit)return null;
+    const energyFactor=fighter.maxPe>=500?5:fighter.maxPe>=200?1.15:1;
+    const cost=Math.ceil(budget*1.4*energyFactor);
+    if(cost>fighter.maxPe)return null;
+    const cooldown=Math.round((3.5+budget*.12)*10)/10;
+    return{version:1,characterId,name:String(raw.name||'Авторский приём').slice(0,28),
+      steps,budget,cost,cooldown};
+  },
+  load(){
+    try{
+      const saved=JSON.parse(localStorage.getItem(this.storageKey));
+      if(saved&&typeof saved==='object'&&!Array.isArray(saved)){
+        for(const characterId of Object.keys(CUSTOM_PALETTES)){
+          if(!Array.isArray(saved[characterId]))continue;
+          this.library[characterId]=Array.from({length:this.slots},(_,i)=>
+            this.compile(saved[characterId][i],characterId));
+        }
+      }
+    }catch(_){this.library={};}
+  },
+  store(){try{localStorage.setItem(this.storageKey,JSON.stringify(this.library));}catch(_){}},
+  getSlot(characterId,index){
+    if(!Number.isInteger(index)||index<0||index>=this.slots)return null;
+    return this.compile(this.library[characterId]?.[index],characterId);
+  },
+  getLoadout(characterId){return Array.from({length:this.slots},(_,i)=>this.getSlot(characterId,i));},
+  setSlot(characterId,index,move){
+    if(!Number.isInteger(index)||index<0||index>=this.slots)return false;
+    const valid=move===null?null:this.compile(move,characterId);
+    if(move!==null&&!valid)return false;
+    if(!this.library[characterId])this.library[characterId]=Array(this.slots).fill(null);
+    this.library[characterId][index]=valid;this.store();return true;
+  },
+  validateLoadout(characterId,loadout){
+    if(!Array.isArray(loadout)||loadout.length>this.slots)return null;
+    return Array.from({length:this.slots},(_,i)=>
+      this.compile(loadout[i],characterId));
+  }
+};
+TechniqueSystem.load();
+
+// Локальный алгоритм-конструктор: разбирает ключевые слова, строит последовательность,
+// затем подгоняет её под те же ограничения, что и ручной редактор/онлайн-валидация.
+// Здесь нет сетевой LLM: незнакомое описание не превращается в произвольный код.
+const TechniqueAssistant = {
+  cues:[
+    {type:'projectile',re:/снаряд|стрел[ья]|выстрел|заряд|шар|пуля|копь[её]/gi},
+    {type:'orbit',re:/орбит|враща|вокруг|спутник/gi},
+    {type:'field',re:/зон[ауе]|пол[ея]|ловушк|област|территор|под противник/gi},
+    {type:'pulse',re:/взрыв|импульс|ударн[а-я]* волн|детонац/gi},
+    {type:'shield',re:/щит|барьер|защит[ауе]|купол|отражени/gi},
+    {type:'dash',re:/рывок|разгон|ускор|перемещ|брос[а-я]* впер[её]д/gi},
+    {type:'heal',re:/восстанов|исцел|лечен|здоровь/gi},
+    {type:'summon',re:/призыв|клон|двойник|помощник|рой|кукл/gi}
+  ],
+  shikigami:[
+    {form:'car',re:/машин|автомобил|колесо фортуны|таран/gi},
+    {form:'knight',re:/рыцар|рапир|фехтов|мечник/gi},
+    {form:'ankh',re:/анх|огненн[а-я]* шар|огненн[а-я]* шикигами/gi},
+    {form:'emperor',re:/император|револьвер|пистолет|пулем[её]т|очеред[ьи]/gi},
+    {form:'guardian',re:/страж|охранник|телохранител|патрул/gi}
+  ],
+  make(description,characterId,variant=0){
+    const text=String(description||'').trim().slice(0,500);
+    const allowed=CUSTOM_PALETTES[characterId];
+    if(!allowed)return null;
+    const hits=[];
+    if(characterId==='kisei'){
+      for(const cue of this.shikigami){
+        for(const match of text.matchAll(cue.re))
+          hits.push({pos:match.index,type:'summon',form:cue.form,
+            label:CUSTOM_KISEI_FORMS[cue.form].name.split(' · ')[0]});
+      }
+    }
+    for(const cue of this.cues){
+      if(!allowed.includes(cue.type))continue;
+      // Для Кисея слово «пуля» внутри «Императора» не требует второго снаряда.
+      if(characterId==='kisei'&&cue.type==='projectile'&&hits.some(h=>h.form==='emperor'))continue;
+      for(const match of text.matchAll(cue.re)){
+        if(characterId==='kisei'&&cue.type==='summon'&&hits.some(h=>Math.abs(h.pos-match.index)<28))continue;
+        hits.push({pos:match.index,type:cue.type,label:CUSTOM_ACTION_TYPES[cue.type].name});
+      }
+    }
+    hits.sort((a,b)=>a.pos-b.pos);
+    const unique=[];
+    for(const hit of hits){
+      const duplicate=unique.some(u=>u.type===hit.type&&u.form===hit.form&&Math.abs(u.pos-hit.pos)<32);
+      if(!duplicate)unique.push(hit);
+    }
+    if(!unique.length){
+      if(characterId==='kisei')unique.push({type:'summon',form:'knight',label:'Серебряный Рыцарь'},
+        {type:'summon',form:'ankh',label:'Огненный Анх'});
+      else unique.push({type:allowed[0],label:CUSTOM_ACTION_TYPES[allowed[0]].name},
+        {type:allowed[Math.min(2,allowed.length-1)],label:CUSTOM_ACTION_TYPES[allowed[Math.min(2,allowed.length-1)]].name});
+    }
+    const requestedCount=/\b3\b|тр[иеё]х|три\s/i.test(text)?3:
+      /\b2\b|дв[аее]\s/i.test(text)?2:1;
+    const highPower=/сильн|мощн|сокруш|огромн|гигант/i.test(text);
+    const far=/дал[еь]|дальн|через\s+всю/i.test(text);
+    const long=/долго|длительн|удержива|несколько секунд/i.test(text);
+    const target=/противник|враг|врагу|цель|прицел|навести/i.test(text);
+    const air=/если.*(?:прыг|воздух)|когда.*(?:прыг|воздух)/i.test(text);
+    const crouch=/если.*(?:присяд|присед)|когда.*(?:присяд|присед)/i.test(text);
+    const steps=unique.slice(0,TechniqueSystem.maxSteps).map((hit,i)=>{
+      const step=TechniqueSystem.defaultStep(hit.type,Math.min(3,Math.round(i*.55*10)/10));
+      if(hit.form)step.form=hit.form;
+      step.power=highPower?4:2+(variant%3===1?1:0);
+      step.range=far?4:2;
+      step.size=/широк|больш|огром/i.test(text)?4:2;
+      step.duration=long?4:2;
+      step.count=(hit.type==='projectile'||hit.type==='orbit'||hit.form==='emperor')?
+        requestedCount:1;
+      step.aim=target||hit.form==='ankh'?'target':'forward';
+      step.condition=air?'enemyAir':crouch?'enemyCrouch':'always';
+      if(variant%3===2){step.size=Math.min(5,step.size+1);step.range=Math.min(5,step.range+1);}
+      return step;
+    });
+    const originalLength=steps.length;
+    const name=(unique.length>1?'Связка: ':'Приём: ')+unique.slice(0,2).map(hit=>
+      hit.label.split(' · ')[0]).join(' + ');
+    const draft={name:name.slice(0,28),steps};
+    // Сохраняем характер приёма: сначала уменьшаем уровни, затем число объектов;
+    // удаляем действия только если иначе невозможно уложиться в бюджет и запас ПЭ.
+    for(let attempts=0;attempts<100&&!TechniqueSystem.compile(draft,characterId);attempts++){
+      let improved=false;
+      const prioritized=[...steps].sort((a,b)=>TechniqueSystem.stepBudget(b)-TechniqueSystem.stepBudget(a));
+      for(const key of ['size','duration','range','power','count']){
+        const candidate=prioritized.find(step=>step[key]>1);
+        if(candidate){candidate[key]--;improved=true;break;}
+      }
+      if(!improved){if(steps.length<=1)break;steps.pop();}
+    }
+    const compiled=TechniqueSystem.compile(draft,characterId);
+    return compiled?{move:compiled,labels:unique.slice(0,steps.length).map(h=>h.label),
+      trimmed:originalLength-steps.length,recognized:hits.length>0}:null;
+  }
+};
+
+const MoveBuilder = {
+  characterId:'lapis',slot:0,draft:null,assistantVariant:0,
+  open(){
+    UI.toggleScreen('screen-menu',false);
+    UI.toggleScreen('screen-select',false);
+    UI.toggleScreen('screen-gameover',false);
+    UI.toggleScreen('screen-builder',true);
+    const characters=document.getElementById('builder-character');
+    characters.innerHTML='';
+    CHARACTERS_DATA.forEach(data=>{
+      const option=document.createElement('option');option.value=data.id;option.textContent=data.name;
+      characters.appendChild(option);
+    });
+    if(!CUSTOM_PALETTES[this.characterId])this.characterId=CHARACTERS_DATA[0].id;
+    characters.value=this.characterId;
+    const slots=document.getElementById('builder-slot');slots.innerHTML='';
+    for(let i=0;i<TechniqueSystem.slots;i++){
+      const option=document.createElement('option');option.value=String(i);option.textContent=`Слот ${i}`;
+      slots.appendChild(option);
+    }
+    slots.value=String(this.slot);
+    this.loadSlot();
+  },
+  close(){UI.toggleScreen('screen-builder',false);UI.toggleScreen('screen-menu',true);},
+  chooseCharacter(id){
+    if(!CUSTOM_PALETTES[id])return;
+    this.characterId=id;this.slot=0;this.assistantVariant=0;
+    document.getElementById('builder-slot').value='0';this.loadSlot();
+  },
+  chooseSlot(value){
+    const slot=Number(value);if(!Number.isInteger(slot)||slot<0||slot>=6)return;
+    this.slot=slot;this.loadSlot();
+  },
+  loadSlot(){
+    const saved=TechniqueSystem.getSlot(this.characterId,this.slot);
+    this.draft=saved?{name:saved.name,steps:saved.steps.map(step=>({...step}))}:
+      {name:'Новый приём',steps:[TechniqueSystem.defaultStep(CUSTOM_PALETTES[this.characterId][0])]};
+    this.render();
+  },
+  setName(name){if(this.draft)this.draft.name=name.slice(0,28);},
+  generateFromIdea(alternate=false){
+    const input=document.getElementById('builder-idea');
+    if(alternate)this.assistantVariant++;
+    else this.assistantVariant=0;
+    const idea=input.value.trim();
+    const proposed=TechniqueAssistant.make(idea,this.characterId,this.assistantVariant);
+    const advice=document.getElementById('builder-advice');
+    if(!proposed){advice.textContent='Не удалось собрать приём в пределах бюджета. Упрости описание.';return;}
+    this.draft={name:proposed.move.name,steps:proposed.move.steps.map(step=>({...step}))};
+    this.render();
+    advice.textContent=`Предложено: ${proposed.labels.join(' → ')}. `+
+      (proposed.trimmed?`Из-за бюджета убрано действий: ${proposed.trimmed}. `:'')+
+      (!proposed.recognized?'Ключевые слова не найдены; использован стартовый шаблон. ':'')+
+      'Можно изменять каждое действие. Для записи в слот нажми «Сохранить слот».';
+  },
+  addStep(){
+    if(this.draft.steps.length>=TechniqueSystem.maxSteps)return;
+    const previous=this.draft.steps[this.draft.steps.length-1];
+    this.draft.steps.push(TechniqueSystem.defaultStep(CUSTOM_PALETTES[this.characterId][0],
+      Math.min(3,Math.round(((previous?.at||0)+.4)*10)/10)));
+    this.render();
+  },
+  removeStep(index){if(this.draft.steps.length<=1)return;
+    this.draft.steps.splice(index,1);this.render();},
+  editStep(index,key,value){
+    const step=this.draft.steps[index];if(!step)return;
+    if(key==='type'&&!CUSTOM_PALETTES[this.characterId].includes(value))return;
+    if(key==='form'&&!(this.characterId==='kisei'&&step.type==='summon'&&
+      Object.prototype.hasOwnProperty.call(CUSTOM_KISEI_FORMS,value)))return;
+    step[key]=['type','aim','condition','form'].includes(key)?value:Number(value);
+    if(key==='type')step.form=this.characterId==='kisei'&&value==='summon'?'car':'generic';
+    this.render();
+  },
+  render(){
+    if(!this.draft)return;
+    document.getElementById('builder-character').value=this.characterId;
+    document.getElementById('builder-slot').value=String(this.slot);
+    document.getElementById('builder-name').value=this.draft.name;
+    const root=document.getElementById('builder-steps');root.innerHTML='';
+    const create=(tag,attributes={})=>{
+      const node=document.createElement(tag);Object.assign(node,attributes);return node;
+    };
+    this.draft.steps.forEach((step,i)=>{
+      const row=create('div',{className:'builder-step'});
+      row.appendChild(create('span',{className:'index',textContent:`#${i+1}`}));
+      const field=(label,element)=>{
+        const wrapper=create('label');wrapper.appendChild(document.createTextNode(label));
+        wrapper.appendChild(element);row.appendChild(wrapper);
+      };
+      const typeSelect=create('select');
+      for(const id of CUSTOM_PALETTES[this.characterId]){
+        const option=create('option',{value:id,textContent:CUSTOM_ACTION_TYPES[id].name});
+        typeSelect.appendChild(option);
+      }
+      typeSelect.value=step.type;
+      typeSelect.onchange=()=>this.editStep(i,'type',typeSelect.value);
+      field('Элемент техники',typeSelect);
+      const shikigami=this.characterId==='kisei'&&step.type==='summon';
+      if(shikigami){
+        if(!Object.prototype.hasOwnProperty.call(CUSTOM_KISEI_FORMS,step.form))step.form='car';
+        const formSelect=create('select');
+        for(const [id,definition]of Object.entries(CUSTOM_KISEI_FORMS))
+          formSelect.appendChild(create('option',{value:id,textContent:definition.name}));
+        formSelect.value=step.form;
+        formSelect.onchange=()=>this.editStep(i,'form',formSelect.value);
+        field('Форма и поведение шикигами',formSelect);
+      }
+      const time=create('input',{type:'number',min:0,max:3,step:.1,value:String(step.at)});
+      time.onchange=()=>this.editStep(i,'at',time.value);field('Через (сек)',time);
+      const definition=CUSTOM_ACTION_TYPES[step.type];
+      const levels=[['power','Мощность',true],['range','Дальность',definition.usesRange||shikigami],
+        ['size','Размер',definition.usesSize||shikigami],['duration','Длительность',definition.usesDuration],
+        ['count','Количество',definition.usesCount||shikigami]];
+      for(const [key,label,visible]of levels){
+        if(!visible)continue;
+        const slider=create('input',{type:'range',min:1,max:key==='count'?3:5,step:1,value:String(step[key])});
+        slider.onchange=()=>this.editStep(i,key,slider.value);
+        field(`${label}: ${step[key]}`,slider);
+      }
+      const aim=create('select');
+      for(const [value,name] of [['forward','По направлению взгляда'],['target','В точку противника']])
+        aim.appendChild(create('option',{value,textContent:name}));
+      aim.value=step.aim;aim.onchange=()=>this.editStep(i,'aim',aim.value);
+      if(definition.usesRange||shikigami)field('Прицеливание',aim);
+      const condition=create('select');
+      for(const [value,name] of [['always','Всегда'],['near','Если враг близко'],
+        ['airborne','Если сам в воздухе'],['enemyAir','Если противник прыгает'],
+        ['enemyCrouch','Если противник присел'],['enemyGround','Если противник на земле']])
+        condition.appendChild(create('option',{value,textContent:name}));
+      condition.value=step.condition;condition.onchange=()=>this.editStep(i,'condition',condition.value);
+      field('Условие',condition);
+      row.appendChild(create('span',{className:'index',textContent:`+${TechniqueSystem.stepBudget(step)} очк.`}));
+      const remove=create('button',{className:'small-btn',textContent:'Удалить'});
+      remove.onclick=()=>this.removeStep(i);row.appendChild(remove);
+      root.appendChild(row);
+    });
+    this.showBudget();
+  },
+  showBudget(message=''){
+    const box=document.getElementById('builder-summary');
+    const character=TechniqueSystem.getCharacter(this.characterId);
+    const budget=this.draft.steps.reduce((sum,step)=>sum+TechniqueSystem.stepBudget(step),0);
+    const factor=character.maxPe>=500?5:character.maxPe>=200?1.15:1;
+    const cost=Math.ceil(budget*1.4*factor);
+    const compiled=TechniqueSystem.compile(this.draft,this.characterId);
+    box.className=`builder-summary${compiled?'':' error'}`;
+    box.textContent=`Бюджет: ${budget}/${TechniqueSystem.budgetLimit} · ПЭ: ${cost}/${character.maxPe}`+
+      ` · Перезарядка: ${(3.5+budget*.12).toFixed(1)} с · Шагов: ${this.draft.steps.length}/6`+
+      (compiled?' · Готово к сохранению':' · Превышен бюджет или энергия')+
+      (message?` · ${message}`:'');
+  },
+  save(){
+    this.draft.name=document.getElementById('builder-name').value.slice(0,28);
+    const move=TechniqueSystem.compile(this.draft,this.characterId);
+    if(!move){this.showBudget('Уменьши мощность или число действий.');return false;}
+    if(!TechniqueSystem.setSlot(this.characterId,this.slot,move))return false;
+    this.showBudget('СОХРАНЕНО');return true;
+  },
+  clear(){
+    if(typeof confirm==='function'&&!confirm('Очистить авторский приём в этом слоте?'))return;
+    TechniqueSystem.setSlot(this.characterId,this.slot,null);this.loadSlot();this.showBudget('СЛОТ ОЧИЩЕН');
+  },
+  exportMove(){
+    const move=TechniqueSystem.compile(this.draft,this.characterId);
+    if(!move){this.showBudget('Сначала исправь параметры.');return;}
+    const encoded=JSON.stringify(move);
+    if(navigator.clipboard?.writeText)navigator.clipboard.writeText(encoded).then(()=>
+      this.showBudget('JSON скопирован')).catch(()=>prompt('Скопируй JSON приёма:',encoded));
+    else if(typeof prompt==='function')prompt('Скопируй JSON приёма:',encoded);
+  },
+  importMove(){
+    if(typeof prompt!=='function')return;
+    const raw=prompt('Вставь JSON авторского приёма:');if(!raw)return;
+    try{
+      if(raw.length>12000)throw Error('Слишком много данных');
+      const data=JSON.parse(raw);
+      const move=TechniqueSystem.compile(data,this.characterId);
+      if(!move)throw Error('Несовместимые или слишком сильные элементы');
+      this.draft={name:move.name,steps:move.steps.map(step=>({...step}))};this.render();
+      this.showBudget('Импортировано. Нажми «Сохранить слот».');
+    }catch(error){this.showBudget('Ошибка импорта: '+error.message);}
+  },
+  test(){
+    if(!this.save())return;
+    game.builderTesting=true;
+    game.mode='training';game.challenge=null;
+    game.p1ChoiceIndex=CHARACTERS_DATA.findIndex(c=>c.id===this.characterId);
+    game.p2ChoiceIndex=(game.p1ChoiceIndex+1)%CHARACTERS_DATA.length;
+    UI.toggleScreen('screen-builder',false);
+    game.startMatch(false);
+    game.trainingOptions.hitboxes=true;
+    document.getElementById('show-hitboxes').checked=true;
+    game.trainingOptions.dummy='idle';
+    document.getElementById('dummy-mode').value='idle';
+  }
+};
+
 const Net = {
   peer: null,
   conn: null,
@@ -1213,6 +1717,7 @@ const Net = {
   remoteClientInputs: null,
   readyHost: false,
   readyClient: false,
+  guestLoadout:null,
 
   iceConfig: {
     config: {
@@ -1283,6 +1788,11 @@ const Net = {
       this.maybeStart();
     } else {
       this.readyClient = !this.readyClient;
+      if(this.readyClient){
+        const characterId=CHARACTERS_DATA[game.p2ChoiceIndex].id;
+        this.send({type:'CUSTOM_LOADOUT',characterId,
+          slots:TechniqueSystem.getLoadout(characterId)});
+      }
       this.send({type: 'READY', ready: this.readyClient});
       UI.updateReadyStatus();
     }
@@ -1304,10 +1814,16 @@ const Net = {
     if (!data || typeof data !== 'object') return;
     if (data.type === 'SELECT_CHAR') {
       if (!Number.isInteger(data.index) || data.index < 0 || data.index >= CHARACTERS_DATA.length) return;
-      if (this.isHost) game.p2ChoiceIndex = data.index;
+      if (this.isHost){game.p2ChoiceIndex = data.index;this.guestLoadout=null;}
       else game.p1ChoiceIndex = data.index;
       this.resetReady();
       UI.renderRoster();
+    } else if(data.type==='CUSTOM_LOADOUT'&&this.isHost&&!game.matchActive){
+      const selected=CHARACTERS_DATA[game.p2ChoiceIndex];
+      if(selected?.id===data.characterId){
+        const accepted=TechniqueSystem.validateLoadout(selected.id,data.slots);
+        if(accepted)this.guestLoadout=accepted;
+      }
     } else if (data.type === 'READY' && this.isHost) {
       this.readyClient = !!data.ready;
       this.broadcastReady();
@@ -1318,7 +1834,7 @@ const Net = {
       UI.updateReadyStatus();
     } else if (data.type === 'MATCH_OPTIONS' && !this.isHost) {
       if (Number.isInteger(data.arena) && ARENAS[data.arena]) game.arenaIndex=data.arena;
-      if(Array.isArray(data.rules))game.ruleIndices=data.rules.filter(i=>Number.isInteger(i)&&i>0&&i<MATCH_MODIFIERS.length);
+      if(Array.isArray(data.rules))game.ruleIndices=normalizeRuleIndices(data.rules);
       else if (Number.isInteger(data.modifier) && MATCH_MODIFIERS[data.modifier]) game.ruleIndices=data.modifier?[data.modifier]:[];
       game.modifierIndex=game.ruleIndices[0]||0;
       if ([1,2,3].includes(data.rounds)) game.roundsToWin=data.rounds;
@@ -1329,8 +1845,9 @@ const Net = {
       if (!CHARACTERS_DATA[data.p1] || !CHARACTERS_DATA[data.p2]) return;
       game.p1ChoiceIndex = data.p1;
       game.p2ChoiceIndex = data.p2;
+      game.hostLoadout=TechniqueSystem.validateLoadout(CHARACTERS_DATA[data.p1].id,data.hostLoadout)||[];
       if (Number.isInteger(data.arena) && ARENAS[data.arena]) game.arenaIndex=data.arena;
-      if(Array.isArray(data.rules))game.ruleIndices=data.rules.filter(i=>Number.isInteger(i)&&i>0&&i<MATCH_MODIFIERS.length);
+      if(Array.isArray(data.rules))game.ruleIndices=normalizeRuleIndices(data.rules);
       else if (Number.isInteger(data.modifier) && MATCH_MODIFIERS[data.modifier]) game.ruleIndices=data.modifier?[data.modifier]:[];
       game.modifierIndex=game.ruleIndices[0]||0;
       if ([1,2,3].includes(data.rounds)) game.roundsToWin=data.rounds;
@@ -1357,6 +1874,7 @@ const Net = {
     this.remoteClientInputs = null;
     this.readyHost = false;
     this.readyClient = false;
+    this.guestLoadout=null;
   }
 };
 
@@ -1431,9 +1949,16 @@ const Input = {
     window.addEventListener('keydown', (e) => {
       if (Controls.captureAction) return;
       AudioSys.init();
-      if (game.matchActive && (Controls.isBound(e.code) || e.code.startsWith('Arrow') || e.code === 'Space')) e.preventDefault();
+      if (game.matchActive && (Controls.isBound(e.code) || e.code.startsWith('Arrow') ||
+          e.code === 'Space'||(e.shiftKey&&/^(Digit[0-9]|Minus|Equal)$/.test(e.code))))e.preventDefault();
       if (e.code === 'Escape') {
         if (game.matchActive) {
+          if(game.builderTesting){
+            game.matchActive=false;game.builderTesting=false;
+            document.getElementById('hud').classList.add('hidden');
+            document.getElementById('training-panel').classList.add('hidden');
+            MoveBuilder.open();return;
+          }
           game.abortMatchToSelect(true);
           return;
         }
@@ -1475,6 +2000,14 @@ const Input = {
 
   isDown(code) { return !!this.keys[code]; },
 
+  customSlot(player=0){
+    if(!this.keys.ShiftLeft&&!this.keys.ShiftRight)return -1;
+    const keys=player===1?['Digit7','Digit8','Digit9','Digit0','Minus','Equal']:
+      ['Digit1','Digit2','Digit3','Digit4','Digit5','Digit6'];
+    for(let i=0;i<keys.length;i++)if(this.keys[keys[i]])return i;
+    return -1;
+  },
+
   consumeDoubleTap(code) {
     const detectedAt = this.doubleTapDetected[code];
     if (!detectedAt) return false;
@@ -1485,10 +2018,13 @@ const Input = {
   getClientInputs() {
     const down = action => this.isDown(Controls.code(0, action));
     const mouse=this.pointerWorld();
+    const customSlot=this.customSlot();
     return {
       left: down('left'), right: down('right'), jump: down('jump'), crouch: down('crouch'),
       block: down('block'), punch: down('punch'), kick: down('kick'),
-      s1: down('s1'), s2: down('s2'), s3: down('s3'), s4: down('s4'),
+      s1: customSlot<0&&down('s1'), s2: customSlot<0&&down('s2'),
+      s3: customSlot<0&&down('s3'), s4: customSlot<0&&down('s4'),
+      customSlot,
       throw:down('throw'),finish:down('finish'),mouseX:mouse.x,mouseY:mouse.y,
       doubleTapJump: this.consumeDoubleTap(Controls.code(0,'jump')),
       doubleTapCrouch: this.consumeDoubleTap(Controls.code(0,'crouch')),
@@ -1581,6 +2117,8 @@ class Fighter {
     this.channelSkill = null;
 
     this.cooldowns = [0, 0, 0, 0];
+    this.customCooldowns=Array(TechniqueSystem.slots).fill(0);
+    this.customMoveState=null;
     this.activeAttack = null;
     this.attackCooldown = 0;
     this.activeAttractionBall = null;
@@ -1749,6 +2287,7 @@ class Fighter {
       this.hitstunTimer=Math.max(this.hitstunTimer,Math.min(.32,.11+actual*.005));
       this.activeAttack=null;
       this.channelTimer=0;this.channelSkill=null;
+      this.customMoveState=null;
     }
     if(flinch&&actual>=3)game.hitstopTimer=Math.max(game.hitstopTimer,Math.min(.09,.035+actual*.001));
     if(flinch&&actual>=18)game.cameraShake=Math.max(game.cameraShake,Math.min(8,actual*.2));
@@ -1784,6 +2323,7 @@ class Fighter {
         this.stunImmunityTimer = stun + 1.5;
         this.channelTimer = 0;
         this.channelSkill = null;
+        this.customMoveState=null;
         game.addText(getGenderWord(this.data.gender, 'ОГЛУШЕН!', 'ОГЛУШЕНА!'), this.x, this.y - this.baseHeight - 20, '#ff9900');
       } else if (this.statusTextTimer <= 0) {
         game.addText('АНТИСТАН', this.x, this.y - this.baseHeight - 20, '#60a5fa');
@@ -1864,6 +2404,9 @@ class Fighter {
     for (let i = 0; i < this.cooldowns.length; i++) {
       if (this.cooldowns[i] > 0) this.cooldowns[i] -= dt;
     }
+    for(let i=0;i<this.customCooldowns.length;i++)
+      this.customCooldowns[i]=Math.max(0,this.customCooldowns[i]-dt);
+    if(this.customMoveState)this.updateCustomMove(dt);
 
     if (game.modifier.unlimitedPe) this.pe = this.maxPe;
     else if (this.pe < this.maxPe) this.pe = Math.min(this.maxPe, this.pe + 0.5 * game.modifier.peRegen * dt);
@@ -1981,6 +2524,8 @@ class Fighter {
     const down = a => Input.isDown(Controls.code(player, a));
     const inputs = {};
     for (const [action] of Controls.actions) inputs[action] = down(action);
+    inputs.customSlot=Input.customSlot(player);
+    if(inputs.customSlot>=0)for(const action of ['s1','s2','s3','s4'])inputs[action]=false;
     const mouse=Input.pointerWorld();inputs.mouseX=mouse.x;inputs.mouseY=mouse.y;
     inputs.doubleTapJump = Input.consumeDoubleTap(Controls.code(player,'jump'));
     inputs.doubleTapCrouch = Input.consumeDoubleTap(Controls.code(player,'crouch'));
@@ -2078,6 +2623,12 @@ class Fighter {
     }
     if(this.inputBuffer)this.inputBuffer.time-=dt;
     if(this.inputBuffer?.time<=0)this.inputBuffer=null;
+    const customSlot=inp.customSlot;
+    if(Number.isInteger(customSlot)&&customSlot>=0&&customSlot<TechniqueSystem.slots&&
+       customSlot!==this.lastInputs.customSlot&&!streaming&&!this.isBlocking&&
+       this.attackCooldown<=0&&this.blockstunTimer<=0){
+      if(this.castCustomMove(customSlot,opponent))this.inputBuffer=null;
+    }
     this.lastInputs={...inp};
     if (!streaming && !this.isBlocking && this.attackCooldown <= 0 && this.blockstunTimer<=0&&this.inputBuffer) {
       const action=this.inputBuffer.action;this.inputBuffer=null;
@@ -2086,6 +2637,39 @@ class Fighter {
       else if(action==='kick'&&!this.data.noKick)this.startBasicAttack('kick');
       else if(/^s[1-4]$/.test(action))this.castSkill(Number(action[1])-1,opponent);
     }
+  }
+
+  castCustomMove(slot,opponent){
+    if(game.mode==='local'||game.modifier.noSkills||this.customMoveState||this.hp<=0)return false;
+    const stored=game.activeLoadouts?.[this.isP2?1:0]?.[slot];
+    const move=TechniqueSystem.compile(stored,this.data.id);
+    if(!move||this.customCooldowns[slot]>0||
+       (!game.modifier.unlimitedPe&&this.pe<move.cost))return false;
+    if(!game.modifier.unlimitedPe)this.pe-=move.cost;
+    this.customCooldowns[slot]=move.cooldown*(game.modifier.cooldownRate||1);
+    this.customMoveState={slot,elapsed:0,nextStep:0,steps:move.steps};
+    this.attackCooldown=Math.max(this.attackCooldown,.2);
+    if(game.stats)game.stats[this.isP2?1:0].skills++;
+    game.addText(move.name,this.x,this.y-this.baseHeight-22,this.data.color);
+    this.updateCustomMove(0,opponent);
+    return true;
+  }
+
+  updateCustomMove(dt,opponent=null){
+    const state=this.customMoveState;if(!state)return;
+    state.elapsed+=dt;
+    const enemy=opponent||(this===game.player1?game.player2:game.player1);
+    while(state.nextStep<state.steps.length&&state.steps[state.nextStep].at<=state.elapsed+.00001){
+      const step=state.steps[state.nextStep++];
+      const allowed=step.condition==='always'||
+        step.condition==='near'&&enemy&&Math.abs(enemy.x-this.x)<=165||
+        step.condition==='airborne'&&!this.isGrounded||
+        step.condition==='enemyAir'&&enemy&&!enemy.isGrounded||
+        step.condition==='enemyCrouch'&&enemy&&enemy.isCrouching||
+        step.condition==='enemyGround'&&enemy&&enemy.isGrounded;
+      if(allowed)game.executeCustomStep(this,enemy,step);
+    }
+    if(state.nextStep>=state.steps.length)this.customMoveState=null;
   }
 
   startThrow(opponent){
@@ -3229,6 +3813,280 @@ class KiseiBullet {
   draw(c){c.save();c.fillStyle='#fff0ba';c.fillRect(this.x-9,this.y-5,18,10);c.restore();}
 }
 
+class CustomShot {
+  constructor(owner,step,index=0){
+    this.owner=owner;this.x=owner.x+owner.facing*35;this.y=owner.y-55;
+    const target=owner===game.player1?game.player2:game.player1;
+    const baseAngle=step.aim==='target'&&target?
+      Math.atan2(target.y-52-this.y,target.x-this.x):owner.facing===1?0:Math.PI;
+    const angle=baseAngle+(index-(step.count-1)/2)*.16;
+    const speed=310+step.range*65;
+    this.vx=Math.cos(angle)*speed;this.vy=Math.sin(angle)*speed;
+    this.radius=8+step.size*3;this.damage=4+step.power*3;
+    this.maxTravel=110+step.range*100;this.travel=0;
+    this.life=3;this.alive=true;this.color=owner.data.color;
+  }
+  update(dt,opponent){
+    const dx=this.vx*dt,dy=this.vy*dt;
+    this.x+=dx;this.y+=dy;this.travel+=Math.hypot(dx,dy);this.life-=dt;
+    const box={x:this.x-this.radius,y:this.y-this.radius,w:this.radius*2,h:this.radius*2};
+    if(game.interceptDamage(box,this.damage,this.owner)){this.alive=false;return;}
+    if(opponent&&rectsIntersect(box,opponent.getHitbox())){
+      opponent.takeDamage(this.damage,8,Math.sign(this.vx)||this.owner.facing,0,this.owner);
+      this.alive=false;
+    }
+    if(this.travel>this.maxTravel||this.life<=0||this.y<0||this.y>currentArena.height||
+      game.isProjectileOutside(this.x,70))this.alive=false;
+  }
+  draw(c){c.save();c.fillStyle=this.color;c.shadowBlur=12;c.shadowColor=this.color;
+    const kind=this.owner.data.id;
+    if(['lapis','airi','mechamaru','sonic'].includes(kind)){
+      c.beginPath();
+      for(let i=0;i<6;i++){
+        const a=i*Math.PI/3,px=this.x+Math.cos(a)*this.radius,py=this.y+Math.sin(a)*this.radius;
+        if(i===0)c.moveTo(px,py);else c.lineTo(px,py);
+      }
+      c.closePath();c.fill();
+    }else if(kind==='caesar'){
+      c.globalAlpha=.45;c.beginPath();c.arc(this.x,this.y,this.radius,0,Math.PI*2);c.fill();
+      c.globalAlpha=1;c.strokeStyle='#d4f8ff';c.lineWidth=3;c.stroke();
+    }else if(kind==='akira'){
+      c.beginPath();c.ellipse(this.x,this.y,this.radius*.75,this.radius*1.3,
+        Math.atan2(this.vy,this.vx),0,Math.PI*2);c.fill();
+    }else{
+      c.beginPath();c.arc(this.x,this.y,this.radius,0,Math.PI*2);c.fill();
+    }
+    c.restore();}
+}
+class CustomOrbit {
+  constructor(owner,step,index){
+    this.owner=owner;this.x=owner.x;this.y=owner.y-55;
+    this.angle=index*Math.PI*2/step.count;this.speed=2.5+step.power*.5;
+    this.offset=40+step.size*10;this.radius=7+step.size*3;
+    this.damage=3+step.power*2;this.life=.5+step.duration*.43;
+    this.hitCd=0;this.alive=true;this.color=owner.data.color;
+  }
+  update(dt,opponent){
+    this.angle+=this.speed*dt;this.life-=dt;this.hitCd=Math.max(0,this.hitCd-dt);
+    this.x=this.owner.x+Math.cos(this.angle)*this.offset;
+    this.y=this.owner.y-55+Math.sin(this.angle)*this.offset*.55;
+    const box={x:this.x-this.radius,y:this.y-this.radius,w:this.radius*2,h:this.radius*2};
+    if(this.hitCd<=0&&game.interceptDamage(box,this.damage,this.owner)){this.hitCd=.65;}
+    else if(this.hitCd<=0&&opponent&&rectsIntersect(box,opponent.getHitbox())){
+      opponent.takeDamage(this.damage,7,Math.sign(opponent.x-this.owner.x)||this.owner.facing,0,this.owner);
+      this.hitCd=.65;
+    }
+    if(this.life<=0)this.alive=false;
+  }
+  draw(c){c.save();c.fillStyle=this.color;c.globalAlpha=.85;
+    c.beginPath();c.arc(this.x,this.y,this.radius,0,Math.PI*2);c.fill();c.restore();}
+}
+class CustomField {
+  constructor(owner,step,opponent){
+    this.owner=owner;this.x=step.aim==='target'&&opponent?opponent.x:
+      owner.x+owner.facing*(40+step.range*50);
+    if(!currentArena.infinite)this.x=Math.max(30,Math.min(currentArena.width-30,this.x));
+    this.y=currentArena.floorY;
+    this.radius=25+step.size*15;this.height=48+step.size*12;
+    this.damage=2+step.power*2;this.delay=.38;
+    this.life=.4+step.duration*.38;this.hitCd=0;this.alive=true;
+    this.color=owner.data.color;
+  }
+  getBox(){return{x:this.x-this.radius,y:this.y-this.height,w:this.radius*2,h:this.height};}
+  update(dt,opponent){
+    if(this.delay>0){this.delay=Math.max(0,this.delay-dt);return;}
+    this.life-=dt;this.hitCd-=dt;
+    if(this.hitCd<=0){
+      const box=this.getBox();
+      if(!game.interceptDamage(box,this.damage,this.owner)&&opponent&&
+         rectsIntersect(box,opponent.getHitbox()))
+        opponent.takeDamage(this.damage,5,Math.sign(opponent.x-this.x)||this.owner.facing,0,this.owner);
+      this.hitCd=.65;
+    }
+    if(this.life<=0)this.alive=false;
+  }
+  draw(c){const box=this.getBox();c.save();c.globalAlpha=this.delay>0?.25:.38;
+    c.fillStyle=this.color;c.fillRect(box.x,box.y,box.w,box.h);
+    c.globalAlpha=1;c.strokeStyle=this.color;c.lineWidth=3;c.strokeRect(box.x,box.y,box.w,box.h);
+    c.restore();}
+}
+class CustomPulse {
+  constructor(owner,step){
+    this.owner=owner;this.x=owner.x+owner.facing*24;this.y=owner.y-50;
+    this.radius=28+step.size*15;this.damage=5+step.power*3;
+    this.life=.28;this.hit=false;this.alive=true;this.color=owner.data.color;
+  }
+  update(dt,opponent){
+    this.life-=dt;
+    if(!this.hit){
+      const box={x:this.x-this.radius,y:this.y-this.radius,w:this.radius*2,h:this.radius*2};
+      if(!game.interceptDamage(box,this.damage,this.owner)&&opponent&&rectsIntersect(box,opponent.getHitbox()))
+        opponent.takeDamage(this.damage,13,Math.sign(opponent.x-this.x)||this.owner.facing,0,this.owner);
+      this.hit=true;
+    }
+    if(this.life<=0)this.alive=false;
+  }
+  draw(c){c.save();c.strokeStyle=this.color;c.lineWidth=6;c.globalAlpha=Math.max(0,this.life/.28);
+    c.beginPath();c.arc(this.x,this.y,this.radius*(1-this.life/.56),0,Math.PI*2);c.stroke();c.restore();}
+}
+class CustomShield {
+  constructor(owner,step){
+    this.owner=owner;this.x=owner.x;this.y=owner.y-48;
+    this.radius=28+step.size*8;this.hp=12+step.power*7;
+    this.maxHp=this.hp;this.life=.4+step.duration*.42;
+    this.alive=true;this.color=owner.data.color;
+  }
+  getBox(){return{x:this.x-this.radius,y:this.y-this.radius,w:this.radius*2,h:this.radius*2};}
+  takeDamage(dmg){this.hp=Math.max(0,this.hp-dmg);if(this.hp<=0)this.alive=false;}
+  update(dt){this.x=this.owner.x;this.y=this.owner.y-48;this.life-=dt;
+    if(this.life<=0||this.hp<=0)this.alive=false;}
+  draw(c){c.save();c.strokeStyle=this.color;c.lineWidth=4;c.globalAlpha=.72;
+    c.beginPath();c.arc(this.x,this.y,this.radius,0,Math.PI*2);c.stroke();
+    drawEntityHealthBar(c,this.x,this.y-this.radius-13,this.hp,this.maxHp,this.color);c.restore();}
+}
+
+class CustomKiseiBullet {
+  constructor(owner,x,y,angle,power,range){
+    this.owner=owner;this.x=x;this.y=y;this.vx=Math.cos(angle)*(470+range*55);
+    this.vy=Math.sin(angle)*(470+range*55);this.damage=2+power*2;
+    this.travel=0;this.maxTravel=160+range*105;this.life=2;this.alive=true;
+  }
+  update(dt,opponent){
+    const dx=this.vx*dt,dy=this.vy*dt;
+    this.x+=dx;this.y+=dy;this.travel+=Math.hypot(dx,dy);this.life-=dt;
+    const box={x:this.x-6,y:this.y-4,w:12,h:8};
+    if(game.interceptDamage(box,this.damage,this.owner)){this.alive=false;return;}
+    if(opponent&&rectsIntersect(box,opponent.getHitbox())){
+      opponent.takeDamage(this.damage,3,Math.sign(this.vx)||this.owner.facing,0,this.owner);
+      this.alive=false;
+    }
+    if(this.life<=0||this.travel>=this.maxTravel||this.y<0||this.y>currentArena.height||
+      game.isProjectileOutside(this.x,70))this.alive=false;
+  }
+  draw(c){c.save();c.fillStyle='#ffe89e';c.shadowColor='#ffb24b';c.shadowBlur=8;
+    c.fillRect(this.x-6,this.y-4,12,8);c.restore();}
+}
+
+// Физически разные сценарии шикигами, а не один фиксированный автомобиль.
+class CustomKiseiShikigami {
+  constructor(owner,step,opponent,index=0){
+    this.owner=owner;this.form=Object.prototype.hasOwnProperty.call(CUSTOM_KISEI_FORMS,step.form)?
+      step.form:'car';
+    this.dir=step.aim==='target'&&opponent?Math.sign(opponent.x-owner.x)||owner.facing:owner.facing;
+    this.x=owner.x+this.dir*(42+index*22);this.y=currentArena.floorY;
+    this.originX=this.x;this.targetX=step.aim==='target'&&opponent?
+      opponent.x+index*22:this.x+this.dir*(140+step.range*100);
+    this.power=step.power;this.range=step.range;this.size=step.size;
+    this.damage=6+step.power*3;this.delay=.32;this.time=0;
+    this.life=this.form==='guardian'?.6+step.duration*.52:
+      this.form==='emperor'?.8+step.count*.45:2.2;
+    this.hp=this.form==='guardian'?12+step.power*7:0;
+    this.maxHp=this.hp;this.attackCd=0;this.shotsLeft=step.count;
+    this.aim=step.aim;this.travel=0;this.alive=true;this.hit=false;
+  }
+  getBox(){
+    if(this.form!=='guardian')return null;
+    const width=28+this.size*5,height=55+this.size*8;
+    return{x:this.x-width/2,y:this.y-height,w:width,h:height};
+  }
+  takeDamage(damage){
+    if(this.form!=='guardian')return;
+    this.hp=Math.max(0,this.hp-damage);
+    if(this.hp<=0)this.alive=false;
+  }
+  update(dt,opponent){
+    if(this.delay>0){this.delay=Math.max(0,this.delay-dt);return;}
+    this.time+=dt;this.life-=dt;this.attackCd=Math.max(0,this.attackCd-dt);
+    if(this.form==='car'){
+      const dx=this.dir*(240+this.range*50)*dt;
+      this.x+=dx;this.travel+=Math.abs(dx);
+      const box={x:this.x-28-this.size*3,y:this.y-27-this.size*2,
+        w:56+this.size*6,h:27+this.size*2};
+      if(game.interceptDamage(box,this.damage,this.owner)){this.alive=false;return;}
+      if(opponent&&rectsIntersect(box,opponent.getHitbox())){
+        opponent.takeDamage(this.damage,20+this.power*4,this.dir,0,this.owner);this.alive=false;
+      }
+      if(this.travel>125+this.range*115)this.alive=false;
+    }else if(this.form==='knight'){
+      if(!this.hit){
+        const reach=65+this.range*24;
+        const box={x:this.dir>0?this.x:this.x-reach,y:this.y-111,
+          w:reach,h:19+this.size*2};
+        if(!game.interceptDamage(box,this.damage,this.owner)&&opponent&&
+          rectsIntersect(box,opponent.getHitbox()))
+          opponent.takeDamage(this.damage,10+this.power*2,this.dir,0,this.owner);
+        this.hit=true;
+      }
+      if(this.time>.28)this.alive=false;
+    }else if(this.form==='ankh'){
+      const total=Math.max(.5,Math.min(1.4,Math.abs(this.targetX-this.originX)/330));
+      const progress=Math.min(1,this.time/total);
+      this.x=this.originX+(this.targetX-this.originX)*progress;
+      this.y=currentArena.floorY-45-Math.sin(Math.PI*progress)*(90+this.size*14);
+      const radius=7+this.size*3,box={x:this.x-radius,y:this.y-radius,w:2*radius,h:2*radius};
+      if(game.interceptDamage(box,this.damage,this.owner)){this.alive=false;return;}
+      if(opponent&&rectsIntersect(box,opponent.getHitbox())){
+        if(opponent.takeDamage(this.damage,7,this.dir,0,this.owner))
+          opponent.applyBurn(1+Math.floor(this.power/3),2,this.owner);
+        this.alive=false;
+      }
+      if(progress>=1)this.alive=false;
+    }else if(this.form==='emperor'){
+      this.x=this.owner.x+this.dir*32;this.y=this.owner.y-53;
+      if(this.shotsLeft>0&&this.attackCd<=0){
+        const base=this.aim==='target'&&opponent?
+          Math.atan2(opponent.y-48-this.y,opponent.x-this.x):this.dir>0?0:Math.PI;
+        game.projectiles.push(new CustomKiseiBullet(this.owner,this.x,this.y,base,
+          this.power,this.range));
+        this.shotsLeft--;this.attackCd=.35;
+      }
+      if(this.shotsLeft<=0&&this.attackCd<=0)this.alive=false;
+    }else if(this.form==='guardian'){
+      const leash=140+this.range*32;
+      if(opponent&&opponent.isGrounded&&
+        Math.abs(opponent.x-this.owner.x)<leash){
+        const diff=opponent.x-this.x;
+        if(Math.abs(diff)>44)this.x+=Math.sign(diff)*Math.min(Math.abs(diff)-44,(55+this.range*15)*dt);
+        if(Math.abs(diff)<73&&this.attackCd<=0){
+          const box={x:this.x-47,y:this.y-74,w:94,h:71};
+          if(!game.interceptDamage(box,this.damage,this.owner)&&
+            rectsIntersect(box,opponent.getHitbox()))
+            opponent.takeDamage(2+this.power*2,5,Math.sign(diff)||this.dir,0,this.owner,false);
+          this.attackCd=.85;
+        }
+      }else{
+        const desiredX=this.owner.x+this.owner.facing*45;
+        this.x+=Math.sign(desiredX-this.x)*Math.min(Math.abs(desiredX-this.x),70*dt);
+      }
+    }
+    if(this.life<=0||this.hp<0||game.isProjectileOutside(this.x,150))this.alive=false;
+  }
+  draw(c){
+    c.save();c.fillStyle='#bba3ed';c.strokeStyle='#f0dfff';c.lineWidth=3;
+    if(this.form==='car'){
+      c.fillRect(this.x-27-this.size*3,this.y-26,54+this.size*6,20);
+      c.fillStyle='#34244b';for(const offset of [-22,22]){
+        c.beginPath();c.arc(this.x+offset,this.y-5,8,0,Math.PI*2);c.fill();}
+    }else if(this.form==='knight'){
+      c.fillRect(this.x-13,this.y-77,26,73);
+      c.strokeStyle='#f2f4ff';c.beginPath();c.moveTo(this.x,this.y-83);
+      c.lineTo(this.x+this.dir*(65+this.range*24),this.y-95);c.stroke();
+    }else if(this.form==='ankh'){
+      const radius=7+this.size*3;c.fillStyle='#fa9445';
+      c.beginPath();c.arc(this.x,this.y,radius,0,Math.PI*2);c.fill();
+      c.fillStyle='#fff0a8';c.beginPath();c.arc(this.x,this.y,radius*.42,0,Math.PI*2);c.fill();
+    }else if(this.form==='emperor'){
+      c.fillStyle='#ffe7a9';c.fillRect(this.x-9,this.y-7,25*this.dir,12);
+      c.fillStyle='#bba3ed';c.fillRect(this.x-2,this.y+1,7,14);
+    }else{
+      const box=this.getBox();c.fillRect(box.x,box.y,box.w,box.h);
+      c.strokeRect(box.x,box.y,box.w,box.h);
+      drawEntityHealthBar(c,this.x,box.y-12,this.hp,this.maxHp,'#c4b5fd');
+    }
+    c.restore();
+  }
+}
+
 function rectsIntersect(r1, r2) {
   return !(r2.x > r1.x + r1.w || r2.x + r2.w < r1.x || r2.y > r1.y + r1.h || r2.y + r2.h < r1.y);
 }
@@ -3239,7 +4097,9 @@ const PROJECTILE_CLASSES = {
   ArayaCannonShip, CannonBall, ArayaRamShip, LapisOrbits, RailgunBall, AttractionBall,
   ChiekoTornado,ChiekoSunbeam,ChiekoIceBlock,AiriMeteorCore,MetalClone,AiriSpike,
   DioVampireStrike,KayanoMeteorCombo,MechamaruBlast,MechamaruDamagePoint,
-  MechamaruPuppet,KiseiCar,KiseiKnight,KiseiAnkh,KiseiBullet
+  MechamaruPuppet,KiseiCar,KiseiKnight,KiseiAnkh,KiseiBullet,
+  CustomShot,CustomOrbit,CustomField,CustomPulse,CustomShield,
+  CustomKiseiBullet,CustomKiseiShikigami
 };
 
 const game = {
@@ -3288,6 +4148,9 @@ const game = {
   snapshotTimer: 0,
   clientInputTimer: 0,
   nextProjectileId: 1,
+  activeLoadouts:[[],[]],
+  hostLoadout:[],
+  builderTesting:false,
 
   init() {
     UI.init();
@@ -3334,7 +4197,8 @@ const game = {
   composeModifier(){
     const result={id:'custom',name:'Особые правила',damage:1,speed:1,peRegen:1,
       gravity:1,cooldownRate:1,knockback:1};
-    for(const idx of [...new Set(this.ruleIndices)]){
+    this.ruleIndices=normalizeRuleIndices(this.ruleIndices);
+    for(const idx of this.ruleIndices){
       const rule=MATCH_MODIFIERS[idx];if(!rule)continue;
       for(const key of ['damage','speed','peRegen','gravity','cooldownRate','knockback'])
         if(Number.isFinite(rule[key]))result[key]*=rule[key];
@@ -3344,6 +4208,56 @@ const game = {
       if(Number.isFinite(rule.startHpScale))result.startHpScale=rule.startHpScale;
     }
     return result;
+  },
+
+  executeCustomStep(fighter,opponent,step){
+    // Все числовые параметры уже ограничены TechniqueSystem.compile().
+    switch(step.type){
+      case 'projectile':
+        for(let i=0;i<step.count;i++)this.projectiles.push(new CustomShot(fighter,step,i));
+        AudioSys.play('beam');break;
+      case 'orbit':
+        for(let i=0;i<step.count;i++)this.projectiles.push(new CustomOrbit(fighter,step,i));
+        AudioSys.play('teleport');break;
+      case 'field':this.projectiles.push(new CustomField(fighter,step,opponent));break;
+      case 'pulse':this.projectiles.push(new CustomPulse(fighter,step));AudioSys.play('explode');break;
+      case 'shield':this.projectiles.push(new CustomShield(fighter,step));break;
+      case 'dash':{
+        const dir=step.aim==='target'&&opponent?Math.sign(opponent.x-fighter.x)||fighter.facing:
+          fighter.facing;
+        const previous=fighter.x;
+        fighter.x+=dir*(25+step.range*35+step.power*8);
+        if(!currentArena.infinite)fighter.x=Math.max(fighter.width/2,
+          Math.min(currentArena.width-fighter.width/2,fighter.x));
+        if(this.bubbleBarrier?.active)this.bubbleBarrier.constrainFighter(fighter);
+        const x=Math.min(previous,fighter.x),width=Math.abs(fighter.x-previous);
+        const dashBox={x,y:fighter.y-55,w:Math.max(1,width),h:50};
+        if(opponent&&!this.interceptDamage(dashBox,2+step.power*2,fighter)&&
+           rectsIntersect(dashBox,opponent.getHitbox()))
+          opponent.takeDamage(2+step.power*2,9,dir,0,fighter);
+        fighter.vx=0;AudioSys.play('teleport');break;
+      }
+      case 'heal':{
+        const amount=fighter.heal(step.power*6);
+        if(amount>0)this.addText(`+${Math.ceil(amount)} HP`,fighter.x,fighter.y-130,'#86efac');
+        AudioSys.play('teleport');break;
+      }
+      case 'summon':{
+        if(fighter.data.id==='kisei'){
+          const copies=step.form==='emperor'?1:step.count;
+          for(let i=0;i<copies;i++)
+            this.projectiles.push(new CustomKiseiShikigami(fighter,step,opponent,i));
+        }else if(fighter.data.id==='sonic'){
+          const clone=new SonicClone(fighter,fighter.x+fighter.facing*50,opponent);
+          clone.life=.8+step.duration*.95;this.projectiles.push(clone);
+        }else if(['airi','mechamaru'].includes(fighter.data.id)){
+          const clone=new MetalClone(fighter,opponent);
+          clone.life=.8+step.duration*.95;this.projectiles.push(clone);
+        }
+        AudioSys.play('teleport');break;
+      }
+    }
+    if(fighter.skillAnimTimer<=0)fighter.triggerSkillAnim(0);
   },
 
   triggerKayanoExplosion(fighter,damage){
@@ -3379,6 +4293,10 @@ const game = {
   interceptDamage(hitBox, dmg, attacker) {
     dmg *= this.modifier.damage;
     for (const p of this.projectiles) {
+      if(p instanceof CustomShield&&p.alive&&p.owner!==attacker&&
+         rectsIntersect(hitBox,p.getBox())){
+        p.takeDamage(dmg);return true;
+      }
       if (p instanceof SonicClone && p.alive && p.owner !== attacker && rectsIntersect(hitBox, p.getHitbox())) {
         p.takeDamage(dmg);
         return true;
@@ -3387,6 +4305,10 @@ const game = {
         p.onAttack(attacker);return true;
       }
       if(p instanceof MechamaruPuppet&&p.alive&&!p.mounted&&p.owner!==attacker&&rectsIntersect(hitBox,p.getBox())){
+        p.takeDamage(dmg);return true;
+      }
+      if(p instanceof CustomKiseiShikigami&&p.alive&&p.form==='guardian'&&p.owner!==attacker&&
+        rectsIntersect(hitBox,p.getBox())){
         p.takeDamage(dmg);return true;
       }
     }
@@ -3419,6 +4341,12 @@ const game = {
     this.finisher=null;this.finisherOpportunity=null;
     this.hitstopTimer=0;this.cameraShake=0;
     this.stats = [{damage:0,hits:0,skills:0,maxCombo:0},{damage:0,hits:0,skills:0,maxCombo:0}];
+    const p1Id=CHARACTERS_DATA[this.p1ChoiceIndex].id;
+    const p2Id=CHARACTERS_DATA[this.p2ChoiceIndex].id;
+    this.activeLoadouts=this.mode==='local'?[[],[]]:this.mode==='online'?
+      (Net.isHost?[TechniqueSystem.getLoadout(p1Id),Net.guestLoadout||[]]:
+        [this.hostLoadout||[],TechniqueSystem.getLoadout(p2Id)]):
+      [TechniqueSystem.getLoadout(p1Id),this.mode==='tournament'?TechniqueSystem.getLoadout(p2Id):[]];
     this.cameraX = 0;
     this.cameraZoom = 1;
     this.announcement = this.mode === 'training' ? 'ТРЕНИРОВКА' : 'РАУНД 1';
@@ -3445,7 +4373,8 @@ const game = {
       document.getElementById('net-tag').classList.remove('hidden');
       if (Net.isHost && broadcast) {
         Net.send({ type:'START_GAME',p1:this.p1ChoiceIndex,p2:this.p2ChoiceIndex,
-          arena:this.arenaIndex,modifier:this.modifierIndex,rules:this.ruleIndices.slice(),rounds:this.roundsToWin });
+          arena:this.arenaIndex,modifier:this.modifierIndex,rules:this.ruleIndices.slice(),
+          rounds:this.roundsToWin,hostLoadout:this.activeLoadouts[0] });
       }
     } else {
       document.getElementById('net-tag').classList.add('hidden');
@@ -3527,6 +4456,7 @@ const game = {
       fighter.y=currentArena.floorY;fighter.vx=0;fighter.vy=0;
       fighter.isGrounded=true;fighter.hp=fighter.maxHp;fighter.pe=fighter.maxPe;
       fighter.stunTimer=0;fighter.hitstunTimer=0;fighter.cooldowns.fill(0);
+      fighter.customCooldowns.fill(0);fighter.customMoveState=null;
     }
     this.projectiles=[];this.bubbleBarrier=null;this.barrierShip=null;
   },
@@ -3554,8 +4484,8 @@ const game = {
   beginKnockout(winner){
     if(this.finisher||this.finisherOpportunity||this.roundPause>0||this.matchOver)return;
     if(winner===null){this.finishRound(null);return;}
-    if(['cpu','arcade','survival'].includes(this.mode)){
-      // В одиночных режимах добивание запускается сразу, даже если выиграл ИИ.
+    if(['cpu','arcade','survival'].includes(this.mode)&&winner===1){
+      // ИИ запускает своё добивание автоматически. Игрок выбирает сам.
       this.finisherOpportunity={winner,time:0};
       this.beginFinisher(winner);
       return;
@@ -3567,7 +4497,9 @@ const game = {
   },
 
   canLocalFinish(winner){
-    return this.mode!=='online'||winner===(Net.isHost?0:1);
+    if(this.mode==='online')return winner===(Net.isHost?0:1);
+    if(['cpu','arcade','survival'].includes(this.mode))return winner===0;
+    return true;
   },
 
   finisherPressed(winner){
@@ -3582,7 +4514,8 @@ const game = {
     if(!this.finisherOpportunity||this.finisherOpportunity.winner!==winner)return;
     this.finisherOpportunity=null;
     const fighter=winner===0?this.player1:this.player2;
-    this.finisher={winner,time:0,duration:5.0,id:fighter.data.id};
+    this.finisher={winner,time:0,duration:5.0,id:fighter.data.id,
+      direction:fighter.facing<0?-1:1};
     this.announcement='ДОБИВАНИЕ!';this.announcementTimer=2;
     this.projectiles=[];this.bubbleBarrier=null;this.barrierShip=null;
     AudioSys.play('explode');
@@ -3604,13 +4537,17 @@ const game = {
       // Все пробеги — кинематографические; физические координаты игроков не меняем.
       const left=currentArena.infinite?this.cameraX-90:0;
       const right=currentArena.infinite?this.cameraX+currentArena.width+90:currentArena.width;
+      const direction=f.direction===-1?-1:1;
       const progress=t<.6?0:t<3.2?((t-.6)*(.95+Math.floor((t-.6)*2)*.22))%1:1;
-      const x=t<3.2?left+(right-left)*progress:target.x-target.facing*55;
+      const x=t<3.2?(direction>0?left+(right-left)*progress:right-(right-left)*progress):
+        target.x-direction*55;
       if(t>.6&&t<3.5){for(let i=1;i<=7;i++){
         c.globalAlpha=.38*(1-i/9);c.fillStyle='#9d73fa';
-        c.fillRect(x-i*winner.facing*30,winner.y-90,20,85);
+        c.fillRect(x-i*direction*30,winner.y-90,20,85);
       }c.globalAlpha=1;}
-      const saved=winner.x;winner.x=x;winner.draw(c);winner.x=saved;
+      const savedX=winner.x,savedFacing=winner.facing;
+      winner.x=x;winner.facing=direction;winner.draw(c);
+      winner.x=savedX;winner.facing=savedFacing;
       if(t>3.2&&t<3.75)this.cameraShake=Math.max(this.cameraShake,9);
     }else{
       winner.draw(c);
@@ -3722,7 +4659,8 @@ const game = {
     // Призыв не может занимать то же пространство, что и вражеский боец на земле.
     for(const summon of this.projectiles){
       if(!summon.alive||
-         !(summon instanceof SonicClone || summon instanceof MechamaruPuppet) ||
+         !(summon instanceof SonicClone || summon instanceof MechamaruPuppet ||
+           summon instanceof CustomKiseiShikigami&&summon.form==='guardian') ||
          summon.mounted)continue;
       const target=summon.owner===this.player1?this.player2:this.player1;
       const body=summon.getHitbox?.()||summon.getBox?.();
@@ -3857,6 +4795,7 @@ const game = {
       for (const fighter of [this.player1,this.player2]) {
         fighter.pe = fighter.maxPe;
         fighter.cooldowns.fill(0);
+        fighter.customCooldowns.fill(0);
         if (fighter.hp <= 0) fighter.hp = fighter.maxHp;
       }
     } else if (this.player1.hp <= 0 || this.player2.hp <= 0) {
@@ -3892,6 +4831,7 @@ const game = {
       swarmTimer:p.swarmTimer,puppetMounted:p.puppetMounted,
       invulnerableTimer:p.invulnerableTimer,skillAnimTimer:p.skillAnimTimer,
       activeSkillState:p.activeSkillState,activeAttack:p.activeAttack,
+      customCooldowns:p.customCooldowns.slice(),customMoveState:p.customMoveState,
       channelTimer:p.channelTimer,
       channelSkillIdx:p.channelSkill ? p.data.skills.indexOf(p.channelSkill) : -1,
       cooldowns:p.cooldowns.slice()
@@ -4011,6 +4951,7 @@ const game = {
       `${progress}Раунд ${this.roundNumber} · ${this.roundWins[0]} : ${this.roundWins[1]}`;
     document.getElementById('round-notice').textContent = this.announcementTimer > 0 ? this.announcement : '';
     const finisherLabel=document.getElementById('finisher-prompt');
+    finisherLabel.classList.toggle('finisher-skip',!!this.finisher&&this.canLocalFinish(this.finisher.winner));
     if(this.finisherOpportunity){
       const winner=this.finisherOpportunity.winner;
       if(this.canLocalFinish(winner)){
@@ -4018,7 +4959,7 @@ const game = {
         finisherLabel.textContent=`ДОБЕЙ!  [${Controls.friendly(Controls.code(player,'finish'))}]  ${this.finisherOpportunity.time.toFixed(1)}с`;
       }else finisherLabel.textContent='ПРОТИВНИК МОЖЕТ ВЫПОЛНИТЬ ДОБИВАНИЕ';
     }else if(this.finisher)finisherLabel.textContent=this.canLocalFinish(this.finisher.winner)?
-      'ДОБИВАНИЕ! · Enter — пропустить':'ДОБИВАНИЕ ПРОТИВНИКА';
+      'Enter — пропустить добивание':'ДОБИВАНИЕ ПРОТИВНИКА';
     else finisherLabel.textContent='';
     const combos=[];
     if (this.player1.comboCount >= 2) combos.push(`P1: ${this.player1.comboCount} HIT`);
@@ -4136,7 +5077,17 @@ const game = {
         if(fighter.activeAttack){const a=fighter.activeAttack;
           this.ctx.fillStyle='rgba(255,66,66,.4)';
           this.ctx.fillRect(fighter.facing>0?fighter.x+fighter.width/2:fighter.x-fighter.width/2-a.reach,
-            fighter.y-70,a.reach,35);}
+            fighter.y-(a.type==='punch'?83:39),a.reach,a.type==='punch'?29:32);}
+      }
+      for(const projectile of this.projectiles){
+        if(!projectile.alive)continue;
+        const box=projectile.getBox?.()||
+          (Number.isFinite(projectile.radius)&&Number.isFinite(projectile.x)&&Number.isFinite(projectile.y)?
+            {x:projectile.x-projectile.radius,y:projectile.y-projectile.radius,
+              w:projectile.radius*2,h:projectile.radius*2}:null);
+        if(!box)continue;
+        this.ctx.strokeStyle='#ffe86a';this.ctx.lineWidth=1;
+        this.ctx.strokeRect(box.x,box.y,box.w,box.h);
       }
       for(const p of this.projectiles){const b=p.getHitbox?.()||p.getBox?.();
         if(!b)continue;this.ctx.strokeStyle='#f97316';this.ctx.strokeRect(b.x,b.y,b.w,b.h);}
@@ -4257,7 +5208,10 @@ const UI = {
       return `P${p+1}: ${Controls.friendly(b.left)}/${Controls.friendly(b.right)} ход, ${Controls.friendly(b.jump)} прыжок, ${Controls.friendly(b.block)} блок, ${Controls.friendly(b.punch)}/${Controls.friendly(b.kick)} удары, ${[b.s1,b.s2,b.s3,b.s4].map(code => Controls.friendly(code)).join('/')} приёмы, ${Controls.friendly(b.throw)} бросок, ${Controls.friendly(b.finish)} добивание`;
     };
     document.getElementById('hud-controls-info').textContent =
-      (['local','tournament'].includes(game.mode) ? `${format(0)}  |  ${format(1)}` : format(0)) + '  |  Esc: выход';
+      (['local','tournament'].includes(game.mode) ? `${format(0)}  |  ${format(1)}` : format(0)) +
+      (game.mode==='local'?'':game.mode==='tournament'?
+        '  |  Шаги P1: Shift+1…6 · P2: Shift+7/8/9/0/-/=':
+        '  |  Shift+1…6: авторские приёмы')+'  |  Esc: выход';
   },
 
   updateReadyStatus() {
@@ -4279,6 +5233,7 @@ const UI = {
   },
 
   optionsChanged() {
+    game.ruleIndices=normalizeRuleIndices(game.ruleIndices);
     if (game.mode === 'online' && Net.isHost) {
       Net.resetReady();
       Net.send({type:'MATCH_OPTIONS',arena:game.arenaIndex,modifier:game.modifierIndex,
@@ -4305,25 +5260,30 @@ const UI = {
     rounds.disabled=disabled || game.mode === 'training';
     const ruleList=document.getElementById('rule-list');
     ruleList.innerHTML='';
+    const limitReached=game.ruleIndices.length>=MAX_ACTIVE_RULES;
     MATCH_MODIFIERS.slice(1).forEach((rule,index)=>{
       const i=index+1,label=document.createElement('label');label.className='rule-chip';
       const checkbox=document.createElement('input');checkbox.type='checkbox';
-      checkbox.checked=game.ruleIndices.includes(i);checkbox.disabled=disabled;
+      checkbox.checked=game.ruleIndices.includes(i);
+      checkbox.disabled=disabled||(limitReached&&!checkbox.checked);
       checkbox.onchange=()=>this.toggleRule(i,checkbox.checked);
       const caption=document.createElement('span');caption.textContent=rule.name;
       label.append(checkbox,caption);ruleList.appendChild(label);
     });
     const names=game.ruleIndices.map(i=>MATCH_MODIFIERS[i]?.name).filter(Boolean);
     document.getElementById('roulette-result').textContent =
-      `Правила: ${names.length?names.join(' + '):'стандартные'}`+(disabled?' · выбирает хост':'');
+      `Правила (${names.length}/${MAX_ACTIVE_RULES}): ${names.length?names.join(' + '):'стандартные'}`+
+      (disabled?' · выбирает хост':'');
   },
 
   toggleRule(index,enabled){
     if(game.mode==='online'&&!Net.isHost)return;
+    if(!Number.isInteger(index)||index<=0||index>=MATCH_MODIFIERS.length)return;
     const selected=new Set(game.ruleIndices);
-    if(enabled)selected.add(index);else selected.delete(index);
+    if(enabled&&selected.size<MAX_ACTIVE_RULES)selected.add(index);
+    else if(!enabled)selected.delete(index);
     // «1 HP» и «Половина здоровья» могут конфликтовать: более суровое правило побеждает.
-    game.ruleIndices=[...selected].sort((a,b)=>a-b);
+    game.ruleIndices=normalizeRuleIndices([...selected]);
     game.modifierIndex=game.ruleIndices[0]||0;
     this.optionsChanged();
   },
@@ -4362,7 +5322,7 @@ const UI = {
     if (this.rouletteSpinning) return;
     this.rouletteSpinning = true;
     const token = this.rouletteToken = (this.rouletteToken || 0) + 1;
-    const count=Math.max(1,Math.min(3,Number(document.getElementById('roulette-count').value)||1));
+    const count=Math.max(1,Math.min(MAX_ACTIVE_RULES,Number(document.getElementById('roulette-count').value)||1));
     const results=[];
     // Равномерно выбираем обычные правила, а 1 HP делаем редким (≈5% на место).
     const hpRule=MATCH_MODIFIERS.findIndex(rule=>rule.id==='last_chance');
@@ -4383,7 +5343,7 @@ const UI = {
       if (step<13) setTimeout(spin,50+step*13);
       else {
         this.rouletteSpinning=false;
-        game.ruleIndices=results.slice().sort((a,b)=>a-b);
+        game.ruleIndices=normalizeRuleIndices(results);
         game.modifierIndex=game.ruleIndices[0]||0;
         this.optionsChanged();
       }
@@ -4461,6 +5421,18 @@ const UI = {
       for (let i = 1; i <= char.skills.length; i++) {
         row.innerHTML += `<span class="cd-badge ready" id="${pKey}-cd${i}">[${i}] ГОТОВ</span>`;
       }
+      const customRow=document.getElementById(`${pKey}-custom-cds`);
+      customRow.innerHTML='';
+      if(game.mode!=='local'){
+        (game.activeLoadouts[pIdx]||[]).forEach((move,slot)=>{
+          if(!move)return;
+          const badge=document.createElement('span');
+          badge.id=`${pKey}-custom${slot}`;badge.className='cd-badge ready';
+          badge.textContent=`[Ш${slot+1}] ГОТОВ`;
+          badge.title=`${move.name} · ${move.cost} ПЭ · бюджет ${move.budget}`;
+          customRow.appendChild(badge);
+        });
+      }
     });
   },
 
@@ -4486,6 +5458,19 @@ const UI = {
         el.innerText = `[${i + 1}] ГОТОВ`;
       }
     }
+    if(game.mode==='local')return;
+    const index=pKey==='p1'?0:1;
+    const moves=game.activeLoadouts[index]||[];
+    moves.forEach((move,slot)=>{
+      if(!move)return;
+      const badge=document.getElementById(`${pKey}-custom${slot}`);
+      if(!badge)return;
+      const cd=fighter.customCooldowns?.[slot]||0;
+      const ready=cd<=0&&fighter.pe>=move.cost&&!game.modifier.noSkills;
+      badge.className=`cd-badge${ready?' ready':''}`;
+      badge.textContent=`[Ш${slot+1}] ${cd>0?cd.toFixed(1)+'с':
+        game.modifier.noSkills?'ЗАПРЕТ':fighter.pe<move.cost?'МАЛО ПЭ':move.name.slice(0,12)}`;
+    });
   },
 
   startSelection(mode) {
