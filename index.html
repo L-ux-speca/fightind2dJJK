@@ -196,6 +196,16 @@
     .small-btn { cursor: pointer; border: 1px solid #395175; border-radius: 5px; background: #192844; color: #fff; padding: 7px 9px; font-size: 12px; }
     #controls-notice { color: #ffda79; font-size: 12px; min-height: 20px; margin-top: 10px; }
     #ready-status { font-size: 15px; margin-top: 14px; text-align: center; color: #bcd4e9; }
+    .match-options { display:flex; flex-wrap:wrap; gap:9px; align-items:center; justify-content:center; margin-top:14px; max-width:1040px; }
+    .match-options label { display:flex; gap:7px; align-items:center; font-size:12px; color:#bcd4e9; }
+    .match-options select { background:#121e35; color:#e6f8ff; border:1px solid #3c5c89; border-radius:5px; padding:9px; max-width:230px; }
+    .match-options button { background:#203153; color:#fff; border:1px solid #4670a5; border-radius:5px; cursor:pointer; padding:9px 12px; }
+    #roulette-result { min-height:22px; margin-top:8px; font-size:13px; color:#f9dc89; text-align:center; }
+    .round-center { display:flex; flex-direction:column; align-items:center; gap:3px; }
+    #round-score { padding:3px 9px; color:#fff; background:rgba(0,0,0,.7); border-radius:5px; font-size:12px; font-weight:bold; white-space:nowrap; }
+    #round-notice { position:absolute; top:32%; left:50%; transform:translateX(-50%); z-index:7; font-size:clamp(22px,4vw,46px); text-align:center; font-weight:900; text-shadow:0 3px 12px #000; color:#fff6bf; pointer-events:none; }
+    #combo-label { position:absolute; top:35%; left:5%; z-index:6; color:#ffe477; font-size:25px; font-weight:900; text-shadow:2px 3px #111; pointer-events:none; }
+    #match-summary { color:#d2e5f6; padding:12px 20px; margin-bottom:12px; border:1px solid #304665; border-radius:8px; background:rgba(8,13,26,.9); font-size:14px; text-align:center; }
     @media (max-width: 850px) {
       h1.title { font-size: clamp(23px, 5vw, 46px); }
       .roster-grid { grid-template-columns: repeat(2, minmax(130px,1fr)); }
@@ -207,6 +217,7 @@
       .skills-cd-row { flex-wrap: wrap; font-size: 8px; }
       .lobby-card { padding: 17px; }
     }
+    @media (max-height: 730px) { .screen { justify-content:flex-start; } }
   </style>
 </head>
 <body>
@@ -230,7 +241,7 @@
         <div class="skills-cd-row" id="p1-cds"></div>
       </div>
 
-      <div class="timer-box" id="match-timer">120</div>
+      <div class="round-center"><div class="timer-box" id="match-timer">120</div><div id="round-score">Раунд 1 · 0 : 0</div></div>
 
       <div class="fighter-hud p2-hud">
         <div class="hud-name" id="p2-name">FIGHTER 2</div>
@@ -245,6 +256,8 @@
         <div class="skills-cd-row" id="p2-cds"></div>
       </div>
     </div>
+    <div id="round-notice"></div>
+    <div id="combo-label"></div>
     <div class="controls-legend" id="hud-controls-info">
       Управление: A/D (Ход), W (Прыжок), S (Присед), Z/X (Удары), 1/2/3/4 (Приемы) || [ESC / 0: Выход]
     </div>
@@ -256,6 +269,7 @@
     <button class="menu-btn accent" onclick="UI.openJoinLobby()">Присоединиться к комнате</button>
     <button class="menu-btn" onclick="UI.startSelection('cpu')">1 Игрок против ИИ</button>
     <button class="menu-btn" onclick="UI.startSelection('local')">2 Игрока (Один ПК)</button>
+    <button class="menu-btn" onclick="UI.startSelection('training')">Тренировочный режим</button>
     <button class="menu-btn" onclick="UI.openControls()">Настройки управления</button>
     <button class="menu-btn" onclick="UI.toggleFullscreen()">Полный экран</button>
     <button class="menu-btn" onclick="UI.toggleScreen('screen-settings', true)">Справка и Баланс</button>
@@ -291,7 +305,17 @@
     <div class="char-select-wrap">
       <div class="select-title" id="select-prompt">Выберите персонажа</div>
       <div class="roster-grid" id="roster"></div>
-      <div style="margin-top: 18px; display: flex; gap: 15px;">
+      <div class="match-options">
+        <label>Арена <select id="arena-choice" onchange="UI.chooseArena(this.value)"></select></label>
+        <label>Матч <select id="rounds-choice" onchange="UI.chooseRounds(this.value)">
+          <option value="1">1 раунд</option><option value="2" selected>До 2 побед</option><option value="3">До 3 побед</option>
+        </select></label>
+        <button onclick="UI.randomFighters()">🎲 Случайные бойцы</button>
+        <button onclick="UI.spinRoulette()">🎰 Рулетка правил</button>
+        <button onclick="UI.resetRoulette()">Обычные правила</button>
+      </div>
+      <div id="roulette-result">Правила: стандартные</div>
+      <div style="margin-top: 18px; display: flex; flex-wrap:wrap; justify-content:center; gap: 15px;">
         <button class="menu-btn" id="btn-confirm-fight" style="width: 180px;" onclick="UI.confirmSelection()">В БОЙ!</button>
         <button class="menu-btn" style="width: 180px; background: #333;" onclick="UI.exitSelection()">Назад</button>
       </div>
@@ -322,7 +346,8 @@
 
   <div id="screen-gameover" class="screen hidden">
     <div class="game-over-banner" id="winner-banner">ПОБЕДА!</div>
-    <div style="display: flex; gap: 20px;">
+    <div id="match-summary"></div>
+    <div style="display: flex; flex-wrap:wrap; justify-content:center; gap: 20px;">
       <button class="menu-btn" id="btn-rematch" onclick="UI.restartMatch()">Реванш</button>
       <button class="menu-btn" onclick="UI.returnToSelection()">Выбор Бойцов</button>
       <button class="menu-btn" onclick="UI.exitToMainMenu()">Главное Меню</button>
@@ -379,6 +404,17 @@ const AudioSys = {
   }
 };
 
+function drawArenaBackdrop(ctx, arena, skyTop, skyBottom, floorColor, edgeColor) {
+  const sky = ctx.createLinearGradient(0,0,0,arena.floorY);
+  sky.addColorStop(0,skyTop); sky.addColorStop(1,skyBottom);
+  ctx.fillStyle = sky;
+  ctx.fillRect(0,0,arena.width,arena.floorY);
+  ctx.fillStyle = floorColor;
+  ctx.fillRect(0,arena.floorY,arena.width,arena.height-arena.floorY);
+  ctx.fillStyle = edgeColor;
+  ctx.fillRect(0,arena.floorY-3,arena.width,3);
+}
+
 const ARENAS = [
   {
     id: 'cyber_arena',
@@ -418,10 +454,92 @@ const ARENAS = [
       ctx.moveTo(0, this.floorY); ctx.lineTo(this.width, this.floorY);
       ctx.stroke();
     }
+  },
+  {
+    id:'tokyo_night',name:'Ночная Сибуя',width:1100,height:550,floorY:460,
+    draw(ctx) {
+      drawArenaBackdrop(ctx,this,'#070b21','#44345d','#20212d','#de6195');
+      const heights=[170,230,160,275,210,300,195,255,175,235];
+      for(let i=0;i<heights.length;i++) {
+        const x=i*this.width/heights.length, w=this.width/heights.length+2;
+        ctx.fillStyle=i%2?'#151729':'#1d2136';
+        ctx.fillRect(x,this.floorY-heights[i],w,heights[i]);
+        ctx.fillStyle=i%3?'#ca4e86':'#3cd6eb';
+        for(let y=this.floorY-heights[i]+15;y<this.floorY-12;y+=27)
+          for(let xx=x+12;xx<x+w-8;xx+=23) ctx.fillRect(xx,y,8,12);
+      }
+      ctx.fillStyle='rgba(255,255,255,.09)';
+      for(let x=0;x<this.width;x+=75) ctx.fillRect(x,this.floorY+26,40,3);
+    }
+  },
+  {
+    id:'higan_dojo',name:'Зал Хиганкана',width:1100,height:550,floorY:460,
+    draw(ctx) {
+      drawArenaBackdrop(ctx,this,'#221510','#75503b','#573522','#e7b36c');
+      ctx.fillStyle='#281914';
+      for(let x=0;x<this.width;x+=150) ctx.fillRect(x,45,15,this.floorY-45);
+      ctx.fillStyle='#b5865a';
+      for(let x=0;x<this.width;x+=150) {
+        ctx.fillRect(x+30,80,96,120);
+        ctx.fillStyle='#efd49c';ctx.fillRect(x+37,87,82,106);ctx.fillStyle='#b5865a';
+      }
+      ctx.strokeStyle='rgba(255,210,130,.16)';ctx.lineWidth=1;
+      for(let x=0;x<this.width;x+=75) {ctx.beginPath();ctx.moveTo(x,this.floorY);ctx.lineTo(x+30,this.height);ctx.stroke();}
+    }
+  },
+  {
+    id:'industrial_port',name:'Промышленный порт',width:1100,height:550,floorY:460,
+    draw(ctx) {
+      drawArenaBackdrop(ctx,this,'#162c46','#ad6d65','#3f4b50','#f0ae72');
+      ctx.fillStyle='#172936';
+      for(let i=0;i<6;i++) {
+        const x=i*230-25, h=85+(i%3)*29;
+        ctx.fillRect(x,this.floorY-h,180,h);
+        ctx.strokeStyle='rgba(255,255,255,.2)';ctx.strokeRect(x,this.floorY-h,180,h);
+      }
+      ctx.strokeStyle='#222e3a';ctx.lineWidth=9;
+      for(const x of [110,this.width-220]) {
+        ctx.lineWidth=9;
+        ctx.beginPath();ctx.moveTo(x,this.floorY-100);ctx.lineTo(x,this.floorY-350);
+        ctx.lineTo(x+190,this.floorY-350);ctx.stroke();
+        ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x+135,this.floorY-350);ctx.lineTo(x+135,this.floorY-145);ctx.stroke();
+      }
+    }
+  },
+  {
+    id:'endless_plain',name:'Бесконечная равнина',infinite:true,width:1100,height:550,floorY:460,
+    draw(ctx) {
+      drawArenaBackdrop(ctx,this,'#1e3148','#7394a0','#414b42','#b9cda3');
+      ctx.fillStyle='#526f71';
+      const offset=game.cameraX*0.2;
+      for(let i=-2;i<12;i++) {
+        const x=i*180-(offset%180);
+        ctx.beginPath();ctx.moveTo(x-110,this.floorY);ctx.lineTo(x,this.floorY-175-(i%3)*35);
+        ctx.lineTo(x+150,this.floorY);ctx.fill();
+      }
+      const step=110, left=Math.floor(game.cameraX/step)*step;
+      for(let x=left-2*step;x<game.cameraX+this.width+2*step;x+=step) {
+        const screenX=x-game.cameraX;
+        ctx.fillStyle='rgba(13,35,22,.35)';ctx.fillRect(screenX,this.floorY-20,3,20);
+        ctx.fillStyle='#7b9873';ctx.beginPath();ctx.arc(screenX,this.floorY-25,10,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle='rgba(255,255,255,.09)';ctx.fillRect(screenX,this.floorY+28,55,2);
+      }
+    }
   }
 ];
 
 let currentArena = ARENAS[0];
+
+const MATCH_MODIFIERS = [
+  {id:'standard',name:'Обычные правила',damage:1,speed:1,peRegen:1,gravity:1},
+  {id:'energy_storm',name:'Энергетический шторм — ПЭ ×5',damage:1,speed:1,peRegen:5,gravity:1},
+  {id:'glass',name:'Стеклянные бойцы — урон ×2',damage:2,speed:1,peRegen:1,gravity:1},
+  {id:'superspeed',name:'Сверхскорость — движение ×1,5',damage:1,speed:1.5,peRegen:1,gravity:1},
+  {id:'no_skills',name:'Без техник — только обычные атаки',damage:1,speed:1,peRegen:1,gravity:1,noSkills:true},
+  {id:'unlimited_pe',name:'Бесконечная ПЭ',damage:1,speed:1,peRegen:1,gravity:1,unlimitedPe:true},
+  {id:'last_chance',name:'Последний шанс — 1 HP',damage:1,speed:1,peRegen:1,gravity:1,startHp:1},
+  {id:'moon_gravity',name:'Лунная гравитация — прыжки выше',damage:1,speed:1,peRegen:1,gravity:0.5}
+];
 
 function getGenderWord(gender, maleWord, femaleWord) {
   return gender === 'f' ? femaleWord : maleWord;
@@ -468,7 +586,7 @@ const CHARACTERS_DATA = [
         name: 'Изумрудный всплеск',
         cost: 25,
         cd: 8.0,
-        desc: 'Поток кристаллов на 1.8 сек (210px). 0.8с оглушения, ~20 ед. урона.',
+        desc: 'Поток кристаллов на 1.8 сек (150px). 0.8с оглушения, ~20 ед. урона. Можно медленно двигаться.',
         castMsg: 'ИЗУМРУДНЫЙ ВСПЛЕСК!',
         action(fighter) {
           fighter.triggerSkillAnim(1);
@@ -478,8 +596,8 @@ const CHARACTERS_DATA = [
         },
         channel(fighter, dt, opponent) {
           const px = fighter.x + fighter.facing * 30;
-          const py = currentArena.floorY - 70;
-          const reach = 210;
+          const py = fighter.y - 70;
+          const reach = 150;
 
           game.particles.push(new Particle(
             px + (Math.random() - 0.5) * 8, py + (Math.random() - 0.5) * 8,
@@ -491,7 +609,7 @@ const CHARACTERS_DATA = [
           if (game.interceptDamage(beamBox, 11 * dt, fighter)) return;
 
           if (opponent && rectsIntersect(beamBox, opponent.getHitbox())) {
-            opponent.takeDamage(11 * dt, 4, fighter.facing, 0.8);
+            opponent.takeDamage(11 * dt, 4, fighter.facing, 0.8, fighter);
           }
         }
       },
@@ -528,7 +646,7 @@ const CHARACTERS_DATA = [
         name: 'Пузырьковая Пушка',
         cost: 15,
         cd: 6.0,
-        desc: 'Поток пузырей на 2 сек. Суммарно 20 ед. урона, отталкивает врага.',
+        desc: 'Поток пузырей на 2 сек (240px). 20 урона за полную длительность, отталкивает врага. Можно медленно двигаться.',
         castMsg: 'ПУЗЫРЬКОВАЯ ПУШКА!',
         action(fighter) {
           fighter.triggerSkillAnim(0);
@@ -538,8 +656,8 @@ const CHARACTERS_DATA = [
         },
         channel(fighter, dt, opponent) {
           const px = fighter.x + fighter.facing * 30;
-          const py = currentArena.floorY - 70;
-          const reach = 400;
+          const py = fighter.y - 70;
+          const reach = 240;
 
           game.particles.push(new Particle(
             px, py + (Math.random() - 0.5) * 15,
@@ -551,7 +669,7 @@ const CHARACTERS_DATA = [
           if (game.interceptDamage(beamBox, 10 * dt, fighter)) return;
 
           if (opponent && rectsIntersect(beamBox, opponent.getHitbox())) {
-            opponent.takeDamage(10 * dt);
+            opponent.takeDamage(10 * dt, 0, 0, 0, fighter);
             opponent.vx = fighter.facing * 50;
           }
         }
@@ -795,7 +913,7 @@ const CHARACTERS_DATA = [
         name: 'Кровавый Поток',
         cost: 10,
         cd: 6.0,
-        desc: 'Красный луч на 3 секунды. Отравляет кровью на 8 урона/сек в течении 3 сек.',
+        desc: 'Красный поток на 3 секунды (230px), кровотечение 8 урона/сек. Можно медленно двигаться.',
         castMsg: 'КРОВАВЫЙ ПОТОК!',
         action(fighter) {
           fighter.triggerSkillAnim(0);
@@ -805,8 +923,8 @@ const CHARACTERS_DATA = [
         },
         channel(fighter, dt, opponent) {
           const px = fighter.x + fighter.facing * 30;
-          const py = currentArena.floorY - 65;
-          const reach = 380;
+          const py = fighter.y - 65;
+          const reach = 230;
           game.particles.push(new Particle(
             px, py + (Math.random() - 0.5) * 8,
             fighter.facing * (450 + Math.random() * 100), (Math.random() - 0.5) * 12,
@@ -815,7 +933,7 @@ const CHARACTERS_DATA = [
           const box = { x: fighter.facing === 1 ? px : px - reach, y: py - 10, w: reach, h: 20 };
           if (game.interceptDamage(box, 4 * dt, fighter)) return;
           if (opponent && rectsIntersect(box, opponent.getHitbox())) {
-            opponent.applyBleed(3.0, 8);
+            opponent.applyBleed(3.0, 8, fighter);
           }
         }
       },
@@ -952,7 +1070,7 @@ const CHARACTERS_DATA = [
           fighter.triggerSkillAnim(2);
           AudioSys.play('beam');
           for (let i = 0; i < 4; i++) {
-            const rx = 100 + Math.random() * (currentArena.width - 200);
+            const rx = currentArena.infinite ? fighter.x + (Math.random() - 0.5) * currentArena.width : 100 + Math.random() * (currentArena.width - 200);
             game.projectiles.push(new DavidToxicPool(fighter, rx));
           }
         }
@@ -1072,11 +1190,20 @@ const Net = {
       this.readyHost = !!data.host;
       this.readyClient = !!data.client;
       UI.updateReadyStatus();
+    } else if (data.type === 'MATCH_OPTIONS' && !this.isHost) {
+      if (Number.isInteger(data.arena) && ARENAS[data.arena]) game.arenaIndex=data.arena;
+      if (Number.isInteger(data.modifier) && MATCH_MODIFIERS[data.modifier]) game.modifierIndex=data.modifier;
+      if ([1,2,3].includes(data.rounds)) game.roundsToWin=data.rounds;
+      this.resetReady();
+      UI.renderMatchOptions();
     } else if (data.type === 'START_GAME') {
       if (this.isHost || !Number.isInteger(data.p1) || !Number.isInteger(data.p2)) return;
       if (!CHARACTERS_DATA[data.p1] || !CHARACTERS_DATA[data.p2]) return;
       game.p1ChoiceIndex = data.p1;
       game.p2ChoiceIndex = data.p2;
+      if (Number.isInteger(data.arena) && ARENAS[data.arena]) game.arenaIndex=data.arena;
+      if (Number.isInteger(data.modifier) && MATCH_MODIFIERS[data.modifier]) game.modifierIndex=data.modifier;
+      if ([1,2,3].includes(data.rounds)) game.roundsToWin=data.rounds;
       game.startMatch(false);
     } else if (data.type === 'CLIENT_INPUTS') {
       this.remoteClientInputs = data.inputs;
@@ -1295,6 +1422,10 @@ class Fighter {
     this.isFallingDive = false;
     this.bleedTimer = 0;
     this.bleedDps = 0;
+    this.bleedSource = null;
+    this.comboCount = 0;
+    this.comboWindow = 0;
+    this.isTrainingDummy = false;
     this.speedBuffTimer = 0;
     this.katanaTimer = 0;
     this.decayFistTimer = 0;
@@ -1304,9 +1435,26 @@ class Fighter {
     this.imageCache = {};
   }
 
-  applyBleed(time, dps) {
+  applyBleed(time, dps, source = null) {
     this.bleedTimer = Math.max(this.bleedTimer, time);
-    this.bleedDps = Math.max(this.bleedDps, dps);
+    if (dps >= this.bleedDps) {
+      this.bleedDps = dps;
+      this.bleedSource = source;
+    }
+  }
+
+  registerHit(damage, passive = false) {
+    const stats = game.stats?.[this.isP2 ? 1 : 0];
+    if (!stats || damage <= 0) return;
+    stats.damage += damage;
+    if (passive || damage < 1) return;
+    stats.hits++;
+    this.comboCount = this.comboWindow > 0 ? this.comboCount + 1 : 1;
+    this.comboWindow = 1.2;
+    stats.maxCombo = Math.max(stats.maxCombo,this.comboCount);
+    if (this.comboCount >= 2 && this.comboCount % 2 === 0) {
+      game.addText(`КОМБО ×${this.comboCount}`, this.x, this.y - this.baseHeight - 35, '#ffe274');
+    }
   }
 
   getHitbox() {
@@ -1319,7 +1467,7 @@ class Fighter {
     };
   }
 
-  takeDamage(dmg, knockback = 0, dir = 0, stun = 0) {
+  takeDamage(dmg, knockback = 0, dir = 0, stun = 0, source = null) {
     if (this.invulnerableTimer > 0) {
       if (this.statusTextTimer <= 0) {
         game.addText(getGenderWord(this.data.gender, 'НЕУЯЗВИМ', 'НЕУЯЗВИМА'), this.x, this.y - this.baseHeight - 10, '#ffff00');
@@ -1328,6 +1476,7 @@ class Fighter {
       return false;
     }
 
+    dmg *= game.modifier.damage;
     if (this.isBlocking && this.pe > 0) {
       dmg *= 0.3;
       this.pe = Math.max(0, this.pe - dmg * 0.6);
@@ -1339,7 +1488,9 @@ class Fighter {
       }
     }
 
+    const healthBefore = this.hp;
     this.hp = Math.max(0, this.hp - dmg);
+    if (source && source !== this && typeof source.registerHit === 'function') source.registerHit(healthBefore-this.hp);
     if (dmg < 1) {
       this.smallDamageAccum += dmg;
     } else {
@@ -1385,6 +1536,10 @@ class Fighter {
   }
 
   update(dt, opponent) {
+    if (this.comboWindow > 0) {
+      this.comboWindow -= dt;
+      if (this.comboWindow <= 0) this.comboCount = 0;
+    }
     this.hitFeedbackTimer = Math.max(0, this.hitFeedbackTimer - dt);
     this.statusTextTimer = Math.max(0, this.statusTextTimer - dt);
     this.smallDamageTimer -= dt;
@@ -1406,7 +1561,9 @@ class Fighter {
 
     if (this.bleedTimer > 0) {
       this.bleedTimer -= dt;
-      this.hp = Math.max(0, this.hp - this.bleedDps * dt);
+      const before = this.hp;
+      this.hp = Math.max(0, this.hp - this.bleedDps * game.modifier.damage * dt);
+      if (this.bleedSource && this.bleedSource !== this) this.bleedSource.registerHit(before-this.hp,true);
       if (Math.random() < 0.2) {
         game.particles.push(new Particle(this.x, this.y - 30, (Math.random()-0.5)*50, 40, '#ff0033', 3, 0.3));
       }
@@ -1421,7 +1578,8 @@ class Fighter {
       if (this.cooldowns[i] > 0) this.cooldowns[i] -= dt;
     }
 
-    if (this.pe < this.maxPe) this.pe = Math.min(this.maxPe, this.pe + 0.5 * dt);
+    if (game.modifier.unlimitedPe) this.pe = this.maxPe;
+    else if (this.pe < this.maxPe) this.pe = Math.min(this.maxPe, this.pe + 0.5 * game.modifier.peRegen * dt);
 
     // Расход ПЭ при полете Тори
     if (this.isFlying) {
@@ -1447,7 +1605,7 @@ class Fighter {
         // Прямой урон при падении
         const diveBox = { x: this.x - 35, y: currentArena.floorY - 60, w: 70, h: 60 };
         if (opponent && rectsIntersect(diveBox, opponent.getHitbox())) {
-          opponent.takeDamage(30, 25, this.facing, 0.5);
+          opponent.takeDamage(30, 25, this.facing, 0.5, this);
         }
         // Волна всплеска по полу
         game.projectiles.push(new ToriShockwave(this, 1));
@@ -1457,8 +1615,7 @@ class Fighter {
 
     if (this.channelTimer > 0) {
       this.channelTimer -= dt;
-      this.vx = 0;
-      this.isCrouching = false;
+      if (this.channelSkill) this.isCrouching = false;
       if (this.channelSkill && typeof this.channelSkill.channel === 'function') {
         this.channelSkill.channel(this, dt, opponent);
       }
@@ -1475,7 +1632,7 @@ class Fighter {
       if (this.activeAttack.timer <= 0) this.activeAttack = null;
     }
 
-    if (this.stunTimer <= 0 && this.channelTimer <= 0 && !this.isFallingDive) {
+    if (this.stunTimer <= 0 && !this.isFallingDive && !this.isTrainingDummy) {
       if (Net.isOnline && this.isP2) this.handleNetworkInput(dt, opponent);
       else if (this.isCpu) this.updateAI(dt, opponent);
       else this.handleLocalInput(dt, opponent);
@@ -1483,7 +1640,7 @@ class Fighter {
 
     if (!this.isFlying && !this.isFallingDive) {
       if (!this.isGrounded) {
-        this.vy += 1200 * dt;
+        this.vy += 1200 * game.modifier.gravity * dt;
         this.y += this.vy * dt;
         if (this.y >= currentArena.floorY) {
           this.y = currentArena.floorY;
@@ -1500,8 +1657,10 @@ class Fighter {
     if (this.knockbackTimer <= 0) this.vx *= Math.pow(0.85, dt * 60);
 
     const halfW = this.width / 2;
-    if (this.x < halfW) this.x = halfW;
-    if (this.x > currentArena.width - halfW) this.x = currentArena.width - halfW;
+    if (!currentArena.infinite) {
+      if (this.x < halfW) this.x = halfW;
+      if (this.x > currentArena.width - halfW) this.x = currentArena.width - halfW;
+    }
 
     if (this.isFlying) {
       if (this.y < 120) this.y = 120;
@@ -1537,7 +1696,7 @@ class Fighter {
   teleportToAttraction() {
     const ball = this.activeAttractionBall;
     if (!ball || !ball.alive) return;
-    this.x = Math.max(this.width / 2, Math.min(currentArena.width - this.width / 2, ball.x));
+    this.x = currentArena.infinite ? ball.x : Math.max(this.width / 2, Math.min(currentArena.width - this.width / 2, ball.x));
     this.y = currentArena.floorY;
     this.vx = 0;
     this.vy = 0;
@@ -1550,7 +1709,8 @@ class Fighter {
   }
 
   handleActions(dt, opponent, inp) {
-    const baseSpd = (this.data.speed + (this.speedBuffTimer > 0 ? 8 : 0)) * 25;
+    const streaming = this.channelTimer > 0 && !!this.channelSkill;
+    const baseSpd = (this.data.speed + (this.speedBuffTimer > 0 ? 8 : 0)) * 25 * game.modifier.speed * (streaming ? 0.45 : 1);
 
     if (this.data.id === 'tori') {
       if (inp.doubleTapJump) this.castSkill(0, opponent);
@@ -1558,7 +1718,7 @@ class Fighter {
     }
     if (this.data.id === 'lapis' && (inp.doubleTapLeft || inp.doubleTapRight)) this.teleportToAttraction();
 
-    this.isBlocking = !!(inp.block && this.isGrounded && !this.isFlying && this.pe > 0 && !this.activeAttack);
+    this.isBlocking = !!(inp.block && this.isGrounded && !this.isFlying && this.pe > 0 && !this.activeAttack && !streaming);
 
     if (this.isFlying) {
       if (this.knockbackTimer <= 0) {
@@ -1569,7 +1729,7 @@ class Fighter {
       if (inp.crouch) this.y += baseSpd * dt;
       this.isCrouching = false;
     } else {
-      this.isCrouching = (inp.crouch && this.isGrounded);
+      this.isCrouching = (inp.crouch && this.isGrounded && !streaming);
       if (!this.isCrouching && !this.isBlocking && this.knockbackTimer <= 0) {
         if (inp.left) this.vx = -baseSpd;
         else if (inp.right) this.vx = baseSpd;
@@ -1583,7 +1743,7 @@ class Fighter {
       }
     }
 
-    if (!this.isBlocking && this.attackCooldown <= 0) {
+    if (!streaming && !this.isBlocking && this.attackCooldown <= 0) {
       if (inp.punch) this.startBasicAttack('punch');
       else if (inp.kick) this.startBasicAttack('kick');
       else if (inp.s1) this.castSkill(0, opponent);
@@ -1595,12 +1755,12 @@ class Fighter {
 
   updateAI(dt, opponent) {
     const dist = Math.abs(this.x - opponent.x);
-    const spd = this.data.speed * 25;
+    const spd = this.data.speed * 25 * game.modifier.speed * (this.channelSkill ? 0.45 : 1);
     const dir = opponent.x > this.x ? 1 : -1;
     const ranged = ['yuzuha','caesar','araya','akira','david','lapis'].includes(this.data.id);
     const desired = ranged ? 185 : 56;
     this.isBlocking = false;
-    if (opponent.activeAttack && dist < 80 && Math.random() < 0.025 * dt * 60) this.isBlocking = true;
+    if (!this.channelSkill && opponent.activeAttack && dist < 80 && Math.random() < 0.025 * dt * 60) this.isBlocking = true;
     const incoming = game.projectiles.some(p => p.alive && p.owner !== this &&
       Number.isFinite(p.x) && Number.isFinite(p.vx) && p.vx !== 0 &&
       Math.abs(p.x - this.x) < 125 && Math.sign(p.vx) === Math.sign(this.x - p.x) &&
@@ -1616,7 +1776,7 @@ class Fighter {
       else this.vx *= Math.pow(0.65, dt * 60);
     }
     this.aiDecisionTimer -= dt;
-    if (this.aiDecisionTimer > 0 || this.attackCooldown > 0) return;
+    if (this.aiDecisionTimer > 0 || this.attackCooldown > 0 || this.channelSkill) return;
     this.aiDecisionTimer = 0.3 + Math.random() * 0.2;
     const ready = this.data.skills.map((skill,i) => ({skill,i}))
       .filter(({skill,i}) => this.pe >= skill.cost && this.cooldowns[i] <= 0 &&
@@ -1631,6 +1791,8 @@ class Fighter {
 
   startBasicAttack(type) {
     let dmg = type === 'punch' ? this.data.punchDmg : this.data.kickDmg;
+    const airAttack = !this.isGrounded;
+    if (airAttack && type === 'kick') dmg *= 1.15;
     if (type === 'punch' && this.decayFistTimer > 0) dmg += 5;
     
     let reach = type === 'punch' ? 45 : 58;
@@ -1646,7 +1808,8 @@ class Fighter {
       activeDuration: 0.12,
       dmg: dmg,
       reach: reach,
-      knockback: 4,
+      knockback: airAttack ? 8 : 4,
+      aerial: airAttack,
       hasHit: false
     };
     this.attackCooldown = totalDuration;
@@ -1671,7 +1834,7 @@ class Fighter {
     }
 
     if (target && rectsIntersect(hitBox, target.getHitbox())) {
-      target.takeDamage(this.activeAttack.dmg, this.activeAttack.knockback, this.facing);
+      target.takeDamage(this.activeAttack.dmg, this.activeAttack.knockback, this.facing,0,this);
       this.activeAttack.hasHit = true;
       this.pe = Math.min(this.maxPe, this.pe + 2);
     }
@@ -1680,12 +1843,13 @@ class Fighter {
   castSkill(slotIndex, opponent) {
     const skill = this.data.skills[slotIndex];
     if (!skill) return;
+    if (game.modifier.noSkills || (this.channelTimer > 0 && this.channelSkill)) return;
+    if ((!game.modifier.unlimitedPe && this.pe < skill.cost) || (this.cooldowns[slotIndex] && this.cooldowns[slotIndex] > 0)) return;
 
-    if (this.pe < skill.cost || (this.cooldowns[slotIndex] && this.cooldowns[slotIndex] > 0)) return;
-
-    this.pe -= skill.cost;
+    if (!game.modifier.unlimitedPe) this.pe -= skill.cost;
     this.cooldowns[slotIndex] = skill.cd;
     this.attackCooldown = 0.4;
+    if (game.stats) game.stats[this.isP2 ? 1 : 0].skills++;
 
     if (skill.castMsg) {
       game.addText(skill.castMsg, this.x, this.y - this.baseHeight, this.data.color);
@@ -1850,6 +2014,18 @@ class Fighter {
 
 // Новые снаряды и эффекты для добавленных персонажей
 
+function drawEntityHealthBar(ctx,x,y,hp,maxHp,color='#56e5a8') {
+  const width = 58, height = 7;
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,.85)';
+  ctx.fillRect(x-width/2-2,y-2,width+4,height+4);
+  ctx.fillStyle = '#5b2534';
+  ctx.fillRect(x-width/2,y,width,height);
+  ctx.fillStyle = color;
+  ctx.fillRect(x-width/2,y,width*Math.max(0,Math.min(1,hp/maxHp)),height);
+  ctx.restore();
+}
+
 class ToriThrowOrb {
   constructor(owner, dir) {
     this.type = 'tori_orb';
@@ -1877,11 +2053,11 @@ class ToriThrowOrb {
       return;
     }
     if (!this.hasHit && opponent && rectsIntersect(box, opponent.getHitbox())) {
-      opponent.takeDamage(this.dmg, 25, this.dir);
+      opponent.takeDamage(this.dmg, 25, this.dir, 0, this.owner);
       this.hasHit = true;
       this.alive = false;
     }
-    if (this.x < -50 || this.x > currentArena.width + 50) this.alive = false;
+    if (game.isProjectileOutside(this.x,50)) this.alive = false;
   }
   draw(ctx) {
     ctx.save();
@@ -1914,7 +2090,7 @@ class ToriShockwave {
     const box = { x: this.x - 20, y: this.y, w: 40, h: 20 };
     if (game.interceptDamage(box, this.dmg, this.owner)) { this.alive = false; return; }
     if (!this.hasHit && opponent && rectsIntersect(box, opponent.getHitbox())) {
-      opponent.takeDamage(this.dmg, 15, this.dir);
+      opponent.takeDamage(this.dmg, 15, this.dir, 0, this.owner);
       this.hasHit = true;
     }
     if (this.life <= 0) this.alive = false;
@@ -1942,6 +2118,8 @@ class AkiraBloodWhip {
   }
   update(dt, opponent) {
     this.life -= dt;
+    this.x = this.owner.x;
+    this.y = this.owner.y - 45;
     const box = { x: this.dir === 1 ? this.x : this.x - this.reach, y: this.y - 12, w: this.reach, h: 24 };
     if (!this.hasHit) {
       if (game.interceptDamage(box, this.dmg, this.owner)) {
@@ -1949,7 +2127,7 @@ class AkiraBloodWhip {
         return;
       }
       if (opponent && rectsIntersect(box, opponent.getHitbox())) {
-        opponent.takeDamage(this.dmg, 30, this.dir);
+        opponent.takeDamage(this.dmg, 30, this.dir, 0, this.owner);
         this.hasHit = true;
       }
     }
@@ -1985,12 +2163,12 @@ class AkiraFloorWave {
     const box = { x: this.x - 30, y: this.y, w: 60, h: 25 };
     if (game.interceptDamage(box, this.dmg, this.owner)) { this.alive = false; return; }
     if (!this.hasHit && opponent && rectsIntersect(box, opponent.getHitbox())) {
-      opponent.takeDamage(this.dmg, 20, this.dir);
-      opponent.applyBleed(3.0, 10);
+      opponent.takeDamage(this.dmg, 20, this.dir, 0, this.owner);
+      opponent.applyBleed(3.0, 10, this.owner);
       this.hasHit = true;
       this.alive = false;
     }
-    if (this.x < -60 || this.x > currentArena.width + 60) this.alive = false;
+    if (game.isProjectileOutside(this.x,60)) this.alive = false;
   }
   draw(ctx) {
     ctx.save();
@@ -2020,7 +2198,7 @@ class SonicClone {
 
     if (Math.abs(dist) < 45 && this.attackCd <= 0) {
       const strikeBox = {x:this.target.x - 16,y:this.target.y - 65,w:32,h:45};
-      if (!game.interceptDamage(strikeBox, 6, this.owner)) this.target.takeDamage(6, 10, Math.sign(dist));
+      if (!game.interceptDamage(strikeBox, 6, this.owner)) this.target.takeDamage(6, 10, Math.sign(dist),0,this.owner);
       this.attackCd = 1.0;
     }
     if (this.life <= 0 || this.hp <= 0) this.alive = false;
@@ -2036,6 +2214,7 @@ class SonicClone {
     ctx.save();
     ctx.fillStyle = 'rgba(76, 29, 149, 0.6)';
     ctx.fillRect(this.x - 18, this.y - 80, 36, 80);
+    drawEntityHealthBar(ctx,this.x,this.y-96,this.hp,10,'#c6a1ff');
     ctx.restore();
   }
 }
@@ -2058,11 +2237,11 @@ class DavidPoisonBall {
     const box = { x: this.x - this.radius, y: this.y - this.radius, w: this.radius * 2, h: this.radius * 2 };
     if (game.interceptDamage(box, this.dmg, this.owner)) { this.alive = false; return; }
     if (!this.hasHit && opponent && rectsIntersect(box, opponent.getHitbox())) {
-      if (opponent.takeDamage(this.dmg, 50, this.dir)) opponent.invulnerableTimer = Math.max(opponent.invulnerableTimer, 1.0);
+      if (opponent.takeDamage(this.dmg, 50, this.dir,0,this.owner)) opponent.invulnerableTimer = Math.max(opponent.invulnerableTimer, 1.0);
       this.hasHit = true;
       this.alive = false;
     }
-    if (this.x < -80 || this.x > currentArena.width + 80) this.alive = false;
+    if (game.isProjectileOutside(this.x,80)) this.alive = false;
   }
   draw(ctx) {
     ctx.save();
@@ -2094,8 +2273,8 @@ class DavidToxicPool {
     const box = { x: this.x - 30, y: this.y - 15, w: 60, h: 15 };
     if (!this.hasDamaged && game.interceptDamage(box, 8, this.owner)) this.hasDamaged = true;
     if (!this.hasDamaged && opponent && rectsIntersect(box, opponent.getHitbox())) {
-      opponent.takeDamage(8, 0, 0);
-      opponent.applyBleed(3.0, 4);
+      opponent.takeDamage(8, 0, 0,0,this.owner);
+      opponent.applyBleed(3.0, 4,this.owner);
       this.hasDamaged = true;
     }
     if (this.poolTimer <= 0) this.alive = false;
@@ -2119,7 +2298,7 @@ class YuzuhaTentacle {
     this.owner = owner;
     this.dir = dir;
     this.startX = owner.x;
-    this.y = currentArena.floorY - 50;
+    this.y = owner.y - 50;
     this.maxReach = 100;
     this.currentReach = 0;
     this.life = 3.0;
@@ -2129,11 +2308,12 @@ class YuzuhaTentacle {
   update(dt, opponent) {
     this.life -= dt;
     this.startX = this.owner.x;
+    this.y = this.owner.y - 50;
     if (this.currentReach < this.maxReach) this.currentReach += 350 * dt;
     const box = { x: this.dir === 1 ? this.startX : this.startX - this.currentReach, y: this.y - 18, w: this.currentReach, h: 36 };
     if (game.interceptDamage(box, this.dmg, this.owner)) { this.alive = false; return; }
     if (opponent && rectsIntersect(box, opponent.getHitbox())) {
-      opponent.takeDamage(this.dmg, 20, this.dir);
+      opponent.takeDamage(this.dmg, 20, this.dir,0,this.owner);
       this.alive = false;
     }
     if (this.life <= 0) this.alive = false;
@@ -2167,7 +2347,7 @@ class BubbleCutter {
     const box = { x: this.x - 20, y: this.y - 20, w: 40, h: 40 };
     if (game.interceptDamage(box, this.dmg, this.owner)) { this.alive = false; return; }
     if (opponent && rectsIntersect(box, opponent.getHitbox())) {
-      opponent.takeDamage(this.dmg, 40, this.dir);
+      opponent.takeDamage(this.dmg, 40, this.dir,0,this.owner);
       this.alive = false;
     }
     if (this.life <= 0) this.alive = false;
@@ -2216,6 +2396,7 @@ class BubbleBarrier {
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
     ctx.fill(); ctx.stroke();
+    drawEntityHealthBar(ctx,this.x,this.y-this.radius-19,this.hp,30,'#44e7f8');
     ctx.restore();
   }
 }
@@ -2266,10 +2447,10 @@ class CannonBall {
     const box = { x: this.x - 8, y: this.y - 8, w: 16, h: 16 };
     if (game.interceptDamage(box, 3.5, this.owner)) { this.alive = false; return; }
     if (opponent && rectsIntersect(box, opponent.getHitbox())) {
-      opponent.takeDamage(3.5, 8, this.vx > 0 ? 1 : -1);
+      opponent.takeDamage(3.5, 8, this.vx > 0 ? 1 : -1,0,this.owner);
       this.alive = false;
     }
-    if (this.life <= 0 || this.x < -50 || this.x > currentArena.width + 50 || this.y < -50 || this.y > currentArena.height + 50) this.alive = false;
+    if (this.life <= 0 || game.isProjectileOutside(this.x,50) || this.y < -50 || this.y > currentArena.height + 50) this.alive = false;
   }
   draw(ctx) {
     ctx.save();
@@ -2301,10 +2482,10 @@ class ArayaRamShip {
     const box = { x: this.x - 40, y: this.y - 20, w: 80, h: 40 };
     if (game.interceptDamage(box, 22, this.owner)) { this.alive = false; return; }
     if (opponent && rectsIntersect(box, opponent.getHitbox())) {
-      opponent.takeDamage(22, 30, this.dir, 1.2);
+      opponent.takeDamage(22, 30, this.dir, 1.2,this.owner);
       this.alive = false;
     }
-    if (this.x < -100 || this.x > currentArena.width + 100) this.alive = false;
+    if (game.isProjectileOutside(this.x,100)) this.alive = false;
   }
   draw(ctx) {
     ctx.save();
@@ -2332,6 +2513,7 @@ class ArayaBarrierShip {
     ctx.save();
     ctx.fillStyle = 'rgba(107, 33, 168, 0.7)';
     ctx.fillRect(this.x - 35, this.y - 45, 70, 90);
+    drawEntityHealthBar(ctx,this.x,this.y-60,this.hp,30,'#d6a3ff');
     ctx.restore();
   }
 }
@@ -2346,13 +2528,13 @@ class LapisOrbits {
   update(dt, opponent) {
     this.life -= dt;
     this.hitCooldown -= dt;
-    const boxL = { x: this.owner.x - 85, y: currentArena.floorY - 60, w: 25, h: 25 };
-    const boxR = { x: this.owner.x + 60, y: currentArena.floorY - 60, w: 25, h: 25 };
+    const boxL = { x: this.owner.x - 85, y: this.owner.y - 60, w: 25, h: 25 };
+    const boxR = { x: this.owner.x + 60, y: this.owner.y - 60, w: 25, h: 25 };
     if (this.hitCooldown <= 0 && (game.interceptDamage(boxL,8,this.owner) || game.interceptDamage(boxR,8,this.owner))) {
       this.hitCooldown = 0.75;
     }
     if (this.hitCooldown <= 0 && opponent && (rectsIntersect(boxL, opponent.getHitbox()) || rectsIntersect(boxR, opponent.getHitbox()))) {
-      opponent.takeDamage(8, 20, opponent.x > this.owner.x ? 1 : -1);
+      opponent.takeDamage(8, 20, opponent.x > this.owner.x ? 1 : -1,0,this.owner);
       this.hitCooldown = 0.75;
     }
     if (this.life <= 0) this.alive = false;
@@ -2361,8 +2543,8 @@ class LapisOrbits {
     ctx.save();
     ctx.fillStyle = '#f43f5e';
     ctx.beginPath();
-    ctx.arc(this.owner.x - 75, currentArena.floorY - 45, 12, 0, Math.PI * 2);
-    ctx.arc(this.owner.x + 75, currentArena.floorY - 45, 12, 0, Math.PI * 2);
+    ctx.arc(this.owner.x - 75, this.owner.y - 45, 12, 0, Math.PI * 2);
+    ctx.arc(this.owner.x + 75, this.owner.y - 45, 12, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }
@@ -2381,10 +2563,10 @@ class RailgunBall {
     const box = { x: this.x - 20, y: this.y - 20, w: 40, h: 40 };
     if (game.interceptDamage(box, 25, this.owner)) { this.alive = false; return; }
     if (opponent && rectsIntersect(box, opponent.getHitbox())) {
-      if (opponent.takeDamage(25, 50, this.vx > 0 ? 1 : -1)) opponent.invulnerableTimer = Math.max(opponent.invulnerableTimer, 1.0);
+      if (opponent.takeDamage(25, 50, this.vx > 0 ? 1 : -1,0,this.owner)) opponent.invulnerableTimer = Math.max(opponent.invulnerableTimer, 1.0);
       this.alive = false;
     }
-    if (this.x < -50 || this.x > currentArena.width + 50) this.alive = false;
+    if (game.isProjectileOutside(this.x,50)) this.alive = false;
   }
   draw(ctx) {
     ctx.save();
@@ -2408,7 +2590,7 @@ class AttractionBall {
   update(dt) {
     this.x += this.vx * dt;
     this.life -= dt;
-    if (this.x < 30 || this.x > currentArena.width - 30) {
+    if (!currentArena.infinite && (this.x < 30 || this.x > currentArena.width - 30)) {
       this.x = Math.max(30, Math.min(currentArena.width - 30, this.x));
       this.vx = 0;
     }
@@ -2456,6 +2638,19 @@ const game = {
   floatingTexts: [],
   bubbleBarrier: null,
   barrierShip: null,
+  arenaIndex: 0,
+  modifierIndex: 0,
+  modifier: MATCH_MODIFIERS[0],
+  roundsToWin: 2,
+  roundNumber: 1,
+  roundEpoch: 0,
+  roundWins: [0,0],
+  roundPause: 0,
+  announcement: '',
+  announcementTimer: 0,
+  stats: null,
+  cameraX: 0,
+  cameraZoom: 1,
   renderScale: 1,
   deviceScale: 1,
   snapshotTimer: 0,
@@ -2484,13 +2679,39 @@ const game = {
     if (this.player1 && this.player2 && oldWidth > 0) {
       const ratio = currentArena.width / oldWidth;
       for (const p of [this.player1, this.player2]) {
-        p.x *= ratio;
+        if (!currentArena.infinite) p.x *= ratio;
         p.y = Math.min(p.y, currentArena.floorY);
       }
     }
   },
 
+  isProjectileOutside(x, margin=60) {
+    if (currentArena.infinite) {
+      const center = this.player1 && this.player2 ? (this.player1.x + this.player2.x)/2 : this.cameraX + currentArena.width/2;
+      const bound = currentArena.width * 2 / Math.max(this.cameraZoom,0.2) + margin;
+      return Math.abs(x-center)>bound;
+    }
+    return x < -margin || x > currentArena.width + margin;
+  },
+
+  updateCamera(dt) {
+    if (!currentArena.infinite || !this.player1 || !this.player2) {
+      this.cameraX=0;
+      this.cameraZoom=1;
+      return;
+    }
+    const a=this.player1,b=this.player2;
+    const center=(a.x+b.x)/2;
+    const distance=Math.abs(a.x-b.x);
+    const desiredX=center-currentArena.width/2;
+    const desiredZoom=Math.max(0.23,Math.min(1,currentArena.width*0.82/(distance+125)));
+    const easing=1-Math.exp(-7*dt);
+    this.cameraX += (desiredX-this.cameraX)*easing;
+    this.cameraZoom += (desiredZoom-this.cameraZoom)*easing;
+  },
+
   interceptDamage(hitBox, dmg, attacker) {
+    dmg *= this.modifier.damage;
     for (const p of this.projectiles) {
       if (p instanceof SonicClone && p.alive && p.owner !== attacker && rectsIntersect(hitBox, p.getHitbox())) {
         p.takeDamage(dmg);
@@ -2515,13 +2736,54 @@ const game = {
   startMatch(broadcast = true) {
     Input.keys = {};
     Input.doubleTapDetected = {};
+    currentArena = ARENAS[this.arenaIndex] || ARENAS[0];
+    this.modifier = MATCH_MODIFIERS[this.modifierIndex] || MATCH_MODIFIERS[0];
+    this.resize();
+    this.roundWins = [0,0];
+    this.roundNumber = 1;
+    this.roundEpoch = 0;
+    this.roundPause = 0;
+    this.stats = [{damage:0,hits:0,skills:0,maxCombo:0},{damage:0,hits:0,skills:0,maxCombo:0}];
+    this.cameraX = 0;
+    this.cameraZoom = 1;
+    this.announcement = this.mode === 'training' ? 'ТРЕНИРОВКА' : 'РАУНД 1';
+    this.announcementTimer = 1.5;
+    this.resetRoundFighters();
+
+    this.matchActive = true;
+    this.matchOver = false;
+    document.getElementById('p1-name').innerText = this.player1.data.name;
+    document.getElementById('p2-name').innerText = this.player2.data.name;
+
+    UI.toggleScreen('screen-select', false);
+    UI.toggleScreen('screen-gameover', false);
+    document.getElementById('hud').classList.remove('hidden');
+    UI.buildCooldownBadges();
+    UI.updateControlsLegend();
+    this.updateHUD();
+
+    if (this.mode === 'online') {
+      document.getElementById('net-tag').classList.remove('hidden');
+      if (Net.isHost && broadcast) {
+        Net.send({ type:'START_GAME',p1:this.p1ChoiceIndex,p2:this.p2ChoiceIndex,
+          arena:this.arenaIndex,modifier:this.modifierIndex,rounds:this.roundsToWin });
+      }
+    } else {
+      document.getElementById('net-tag').classList.add('hidden');
+    }
+  },
+
+  resetRoundFighters() {
+    this.roundEpoch++;
     this.player1 = new Fighter(CHARACTERS_DATA[this.p1ChoiceIndex], false, false);
     const isP2Cpu = (this.mode === 'cpu');
     this.player2 = new Fighter(CHARACTERS_DATA[this.p2ChoiceIndex], true, isP2Cpu);
-
-    this.matchTimer = 120;
-    this.matchActive = true;
-    this.matchOver = false;
+    if (this.mode === 'training') this.player2.isTrainingDummy = true;
+    if (Number.isFinite(this.modifier.startHp)) {
+      this.player1.hp = this.modifier.startHp;
+      this.player2.hp = this.modifier.startHp;
+    }
+    this.matchTimer = this.mode === 'training' ? Infinity : 120;
     this.projectiles = [];
     this.particles = [];
     this.floatingTexts = [];
@@ -2531,25 +2793,6 @@ const game = {
     this.clientInputTimer = 0;
     this.nextProjectileId = 1;
     Net.remoteClientInputs = null;
-
-    document.getElementById('p1-name').innerText = this.player1.data.name;
-    document.getElementById('p2-name').innerText = this.player2.data.name;
-
-    UI.toggleScreen('screen-select', false);
-    UI.toggleScreen('screen-gameover', false);
-    document.getElementById('hud').classList.remove('hidden');
-
-    UI.buildCooldownBadges();
-    UI.updateControlsLegend();
-
-    if (this.mode === 'online') {
-      document.getElementById('net-tag').classList.remove('hidden');
-      if (Net.isHost && broadcast) {
-        Net.send({ type: 'START_GAME', p1: this.p1ChoiceIndex, p2: this.p2ChoiceIndex });
-      }
-    } else {
-      document.getElementById('net-tag').classList.add('hidden');
-    }
   },
 
   abortMatchToSelect(notifyPeer = true) {
@@ -2569,12 +2812,49 @@ const game = {
     const overlap = (a.width + b.width) / 2 - Math.abs(diff);
     if (overlap <= 0 || Math.abs(a.y - b.y) > Math.min(a.baseHeight,b.baseHeight) * 0.75) return;
     const dir = diff < 0 ? -1 : 1;
-    a.x = Math.max(a.width / 2, Math.min(currentArena.width - a.width / 2, a.x - dir * overlap / 2));
-    b.x = Math.max(b.width / 2, Math.min(currentArena.width - b.width / 2, b.x + dir * overlap / 2));
+    if (currentArena.infinite) {
+      a.x -= dir*overlap/2;
+      b.x += dir*overlap/2;
+    } else {
+      a.x = Math.max(a.width / 2, Math.min(currentArena.width - a.width / 2, a.x - dir * overlap / 2));
+      b.x = Math.max(b.width / 2, Math.min(currentArena.width - b.width / 2, b.x + dir * overlap / 2));
+    }
   },
 
   addText(text, x, y, color = '#fff') {
     this.floatingTexts.push(new FloatingText(text, x, y, color));
+  },
+
+  finishRound(winner) {
+    if (this.roundPause > 0 || this.matchOver) return;
+    if (winner !== null) this.roundWins[winner]++;
+    const label = winner === null ? 'НИЧЬЯ В РАУНДЕ' : `${winner === 0 ? this.player1.data.name : this.player2.data.name} — РАУНД!`;
+    if (winner !== null && this.roundWins[winner] >= this.roundsToWin) {
+      this.endMatch(`${winner === 0 ? this.player1.data.name : this.player2.data.name} ПОБЕДИЛ!`);
+      return;
+    }
+    this.roundNumber++;
+    this.roundPause = 2.3;
+    this.announcement = `${label}  ·  СЛЕДУЮЩИЙ РАУНД ${this.roundNumber}`;
+    this.announcementTimer = 2.2;
+  },
+
+  updateEffects(dt) {
+    if (this.announcementTimer > 0) this.announcementTimer = Math.max(0,this.announcementTimer-dt);
+    this.floatingTexts.forEach(t => t.update(dt));
+    this.floatingTexts = this.floatingTexts.filter(t => t.life > 0);
+    this.particles.forEach(p => p.update(dt));
+    this.particles = this.particles.filter(p => p.life > 0);
+    this.updateCamera(dt);
+  },
+
+  sendSnapshotIfNeeded(dt) {
+    if (this.mode !== 'online' || !Net.isHost) return;
+    this.snapshotTimer -= dt;
+    if (this.snapshotTimer <= 0 || this.matchOver) {
+      Net.send({type:'STATE_SNAPSHOT',snapshot:this.generateStateSnapshot()});
+      this.snapshotTimer = 1/20;
+    }
   },
 
   update(dt) {
@@ -2587,15 +2867,33 @@ const game = {
         this.clientInputTimer = 1/30;
       }
       this.smoothClientObjects(dt);
+      this.updateCamera(dt);
       return;
     }
 
-    this.matchTimer -= dt;
-    if (this.matchTimer <= 0) {
-      this.matchTimer = 0;
-      this.endMatch('ВРЕМЯ ВЫШЛО!');
+    if (this.roundPause > 0) {
+      this.roundPause = Math.max(0,this.roundPause-dt);
+      this.updateEffects(dt);
+      if (this.roundPause <= 0) {
+        this.resetRoundFighters();
+        this.announcement = `РАУНД ${this.roundNumber}`;
+        this.announcementTimer = 1.2;
+      }
+      this.updateHUD();
+      this.sendSnapshotIfNeeded(dt);
+      return;
     }
-    document.getElementById('match-timer').innerText = Math.ceil(this.matchTimer);
+
+    if (this.mode !== 'training') this.matchTimer -= dt;
+    if (this.matchTimer <= 0 && this.mode !== 'training') {
+      this.matchTimer = 0;
+      const hp1=this.player1.hp/this.player1.maxHp;
+      const hp2=this.player2.hp/this.player2.maxHp;
+      this.finishRound(Math.abs(hp1-hp2)<0.001 ? null : hp1>hp2 ? 0 : 1);
+      this.updateHUD();
+      this.sendSnapshotIfNeeded(dt);
+      return;
+    }
 
     this.player1.update(dt, this.player2);
     this.player2.update(dt, this.player1);
@@ -2608,26 +2906,20 @@ const game = {
       if (!p.alive) this.projectiles.splice(i, 1);
     }
 
-    if (this.player1.hp <= 0 || this.player2.hp <= 0) {
-      if (this.player1.hp <= 0 && this.player2.hp <= 0) this.endMatch('НИЧЬЯ!');
-      else if (this.player1.hp <= 0) this.endMatch(`${this.player2.data.name.toUpperCase()} ПОБЕДИЛ!`);
-      else this.endMatch(`${this.player1.data.name.toUpperCase()} ПОБЕДИЛ!`);
-    }
-
-    this.floatingTexts.forEach(t => t.update(dt));
-    this.floatingTexts = this.floatingTexts.filter(t => t.life > 0);
-    this.particles.forEach(p => p.update(dt));
-    this.particles = this.particles.filter(p => p.life > 0);
-
-    this.updateHUD();
-
-    if (this.mode === 'online' && Net.isHost) {
-      this.snapshotTimer -= dt;
-      if (this.snapshotTimer <= 0 || this.matchOver) {
-        Net.send({type:'STATE_SNAPSHOT',snapshot:this.generateStateSnapshot()});
-        this.snapshotTimer = 1/20;
+    if (this.mode === 'training') {
+      for (const fighter of [this.player1,this.player2]) {
+        fighter.pe = fighter.maxPe;
+        fighter.cooldowns.fill(0);
+        if (fighter.hp <= 0) fighter.hp = fighter.maxHp;
       }
+    } else if (this.player1.hp <= 0 || this.player2.hp <= 0) {
+      const winner = this.player1.hp <= 0 && this.player2.hp <= 0 ? null : this.player1.hp <= 0 ? 1 : 0;
+      this.finishRound(winner);
     }
+
+    this.updateEffects(dt);
+    this.updateHUD();
+    this.sendSnapshotIfNeeded(dt);
   },
 
   projectileState(p) {
@@ -2656,6 +2948,13 @@ const game = {
     return {
       timer: this.matchTimer,
       arenaWidth: currentArena.width,
+      round:this.roundNumber,
+      roundEpoch:this.roundEpoch,
+      wins:this.roundWins.slice(),
+      roundPause:this.roundPause,
+      announcement:this.announcement,
+      announcementTimer:this.announcementTimer,
+      stats:this.stats,
       gameOver: this.matchOver ? document.getElementById('winner-banner').innerText : null,
       p1: this.fighterState(this.player1),
       p2: this.fighterState(this.player2),
@@ -2674,8 +2973,21 @@ const game = {
   applyStateSnapshot(s) {
     if (!s || !this.player1 || !this.player2 || !s.p1 || !s.p2) return;
     this.matchTimer = s.timer;
-    document.getElementById('match-timer').innerText = Math.ceil(this.matchTimer);
-    const ratio = currentArena.width / (s.arenaWidth || currentArena.width);
+    if (Number.isInteger(s.round) && s.round !== this.roundNumber) {
+      this.roundNumber=s.round;
+    }
+    if (Number.isInteger(s.roundEpoch) && s.roundEpoch !== this.roundEpoch) {
+      this.roundEpoch=s.roundEpoch;
+      this.player1.receivedSnapshot=false;
+      this.player2.receivedSnapshot=false;
+      this.projectiles=[];
+    }
+    if (Array.isArray(s.wins) && s.wins.length===2) this.roundWins=s.wins;
+    if (Number.isFinite(s.roundPause)) this.roundPause=s.roundPause;
+    if (typeof s.announcement==='string') this.announcement=s.announcement;
+    if (Number.isFinite(s.announcementTimer)) this.announcementTimer=s.announcementTimer;
+    if (Array.isArray(s.stats) && s.stats.length===2) this.stats=s.stats;
+    const ratio = currentArena.infinite ? 1 : currentArena.width / (s.arenaWidth || currentArena.width);
     for (const [fighter,source] of [[this.player1,s.p1],[this.player2,s.p2]]) {
       const {x,y,vx,...rest} = source;
       Object.assign(fighter, rest);
@@ -2692,14 +3004,15 @@ const game = {
       const Constructor = PROJECTILE_CLASSES[entry.cls];
       if (!Constructor || !entry.props || !Number.isFinite(entry.props.netId)) return [];
       const id = entry.props.netId;
-      const p = oldById.get(id) || Object.create(Constructor.prototype);
+      const previous=oldById.get(id);
+      const p = previous?.constructor === Constructor ? previous : Object.create(Constructor.prototype);
       const {x,y,...props} = entry.props;
       Object.assign(p,props);
       p.owner = entry.ownerP === 1 ? this.player1 : this.player2;
       p.target = entry.ownerP === 1 ? this.player2 : this.player1;
       p.renderTargetX = Number.isFinite(x) ? x * ratio : null;
       p.renderTargetY = Number.isFinite(y) ? y : null;
-      if (!oldById.has(id)) {
+      if (p !== previous) {
         if (p.renderTargetX !== null) p.x = p.renderTargetX;
         if (p.renderTargetY !== null) p.y = p.renderTargetY;
       }
@@ -2729,6 +3042,14 @@ const game = {
   },
 
   updateHUD() {
+    document.getElementById('match-timer').innerText = this.mode === 'training' ? '∞' : Math.ceil(this.matchTimer);
+    document.getElementById('round-score').innerText = this.mode === 'training' ? 'ТРЕНИРОВКА · ∞ ПЭ' :
+      `Раунд ${this.roundNumber} · ${this.roundWins[0]} : ${this.roundWins[1]}`;
+    document.getElementById('round-notice').textContent = this.announcementTimer > 0 ? this.announcement : '';
+    const combos=[];
+    if (this.player1.comboCount >= 2) combos.push(`P1: ${this.player1.comboCount} HIT`);
+    if (this.player2.comboCount >= 2) combos.push(`P2: ${this.player2.comboCount} HIT`);
+    document.getElementById('combo-label').textContent = combos.join('   |   ');
     document.getElementById('p1-hp').style.width = `${(this.player1.hp / this.player1.maxHp) * 100}%`;
     document.getElementById('p2-hp').style.width = `${(this.player2.hp / this.player2.maxHp) * 100}%`;
     document.getElementById('p1-pe').style.width = `${(this.player1.pe / this.player1.maxPe) * 100}%`;
@@ -2747,6 +3068,11 @@ const game = {
     this.matchActive = false;
     this.matchOver = true;
     document.getElementById('winner-banner').innerText = msg;
+    const names=[this.player1.data.name,this.player2.data.name];
+    const stats=this.stats || [{damage:0,hits:0,skills:0,maxCombo:0},{damage:0,hits:0,skills:0,maxCombo:0}];
+    document.getElementById('match-summary').innerText = names.map((name,i) =>
+      `${name}: ${this.roundWins[i]} раунд(а) · ${Math.round(stats[i].damage)} урона · ${stats[i].hits} попаданий · ${stats[i].skills} техник · комбо ×${stats[i].maxCombo}`
+    ).join('   |   ');
     UI.toggleScreen('screen-gameover', true);
     if (this.mode === 'online') {
       Net.readyHost = false;
@@ -2762,6 +3088,31 @@ const game = {
 
     if (!this.player1 || !this.player2) return;
 
+    this.ctx.save();
+    if (currentArena.infinite) {
+      this.ctx.translate(currentArena.width/2,currentArena.floorY);
+      this.ctx.scale(this.cameraZoom,this.cameraZoom);
+      this.ctx.translate(-(this.cameraX+currentArena.width/2),-currentArena.floorY);
+    }
+
+    for (const f of [this.player1,this.player2]) {
+      if (f.channelTimer <= 0 || !(f.channelSkill || f.channelSkillIdx >= 0)) continue;
+      let reach,dy,thickness,color;
+      if (f.data.id==='yuzuha') [reach,dy,thickness,color]=[150,70,24,'#00ffaa'];
+      else if (f.data.id==='caesar') [reach,dy,thickness,color]=[240,70,28,'#38b6ff'];
+      else if (f.data.id==='akira') [reach,dy,thickness,color]=[230,65,20,'#ff4350'];
+      else continue;
+      const x=f.x+f.facing*30,y=f.y-dy;
+      const left=f.facing>0?x:x-reach;
+      this.ctx.save();
+      this.ctx.globalAlpha=.65;
+      const gradient=this.ctx.createLinearGradient(left,0,left+reach,0);
+      gradient.addColorStop(0,color);gradient.addColorStop(.5,'#fff');gradient.addColorStop(1,color);
+      this.ctx.fillStyle=gradient;
+      this.ctx.fillRect(left,y-thickness/2,reach,thickness);
+      this.ctx.restore();
+    }
+
     if (this.bubbleBarrier && this.bubbleBarrier.active) this.bubbleBarrier.draw(this.ctx);
     if (this.barrierShip && this.barrierShip.alive) this.barrierShip.draw(this.ctx);
 
@@ -2770,21 +3121,9 @@ const game = {
     this.player1.draw(this.ctx);
     this.player2.draw(this.ctx);
 
-    if (this.mode === 'online' && !Net.isHost) {
-      for (const f of [this.player1,this.player2]) {
-        if (f.channelTimer <= 0 || f.channelSkillIdx < 0) continue;
-        const color = f.data.id === 'akira' ? '#ef4444' : f.data.id === 'caesar' ? '#38b6ff' : '#00ffaa';
-        const reach = f.data.id === 'yuzuha' ? 210 : f.data.id === 'caesar' ? 400 : 380;
-        this.ctx.save();
-        this.ctx.globalAlpha = 0.6;
-        this.ctx.fillStyle = color;
-        this.ctx.fillRect(f.facing > 0 ? f.x + 30 : f.x - 30 - reach, currentArena.floorY - 77,reach,18);
-        this.ctx.restore();
-      }
-    }
-
     this.particles.forEach(p => p.draw(this.ctx));
     this.floatingTexts.forEach(t => t.draw(this.ctx));
+    this.ctx.restore();
   },
 
   lastTime: performance.now(),
@@ -2801,6 +3140,7 @@ const UI = {
   init() {
     this.renderRoster();
     this.generateHelpContent();
+    this.renderMatchOptions();
     window.addEventListener('keydown', (e) => {
       if (!Controls.captureAction) return;
       e.preventDefault();
@@ -2910,6 +3250,93 @@ const UI = {
     rematchBtn.textContent = mine ? 'Отменить готовность' : 'Готов к реваншу';
   },
 
+  optionsChanged() {
+    if (game.mode === 'online' && Net.isHost) {
+      Net.resetReady();
+      Net.send({type:'MATCH_OPTIONS',arena:game.arenaIndex,modifier:game.modifierIndex,rounds:game.roundsToWin});
+    }
+    this.renderMatchOptions();
+  },
+
+  renderMatchOptions() {
+    const arena = document.getElementById('arena-choice');
+    const rounds = document.getElementById('rounds-choice');
+    if (!arena || !rounds) return;
+    arena.innerHTML = '';
+    ARENAS.forEach((item,i) => {
+      const option = document.createElement('option');
+      option.value = String(i);
+      option.textContent = item.name + (item.infinite ? ' (∞)' : '');
+      arena.appendChild(option);
+    });
+    arena.value=String(game.arenaIndex);
+    rounds.value=String(game.roundsToWin);
+    const disabled=game.mode === 'online' && !Net.isHost;
+    arena.disabled=disabled;
+    rounds.disabled=disabled || game.mode === 'training';
+    document.getElementById('roulette-result').textContent =
+      `Правила: ${MATCH_MODIFIERS[game.modifierIndex].name}` + (disabled ? ' · выбирает хост' : '');
+  },
+
+  chooseArena(value) {
+    if (game.mode === 'online' && !Net.isHost) return;
+    const index=Number(value);
+    if (!Number.isInteger(index) || !ARENAS[index]) return;
+    game.arenaIndex=index;
+    this.optionsChanged();
+  },
+
+  chooseRounds(value) {
+    if (game.mode === 'online' && !Net.isHost) return;
+    const count=Number(value);
+    if (![1,2,3].includes(count)) return;
+    game.roundsToWin=count;
+    this.optionsChanged();
+  },
+
+  randomFighters() {
+    AudioSys.init();
+    const choose=() => Math.floor(Math.random()*CHARACTERS_DATA.length);
+    if (game.mode === 'online') {
+      this.selectCharacter(choose());
+    } else {
+      game.p1ChoiceIndex=choose();
+      game.p2ChoiceIndex=choose();
+      if (CHARACTERS_DATA.length > 1) while(game.p2ChoiceIndex===game.p1ChoiceIndex) game.p2ChoiceIndex=choose();
+      this.renderRoster();
+    }
+  },
+
+  spinRoulette() {
+    if (game.mode === 'online' && !Net.isHost) return;
+    if (this.rouletteSpinning) return;
+    this.rouletteSpinning = true;
+    const token = this.rouletteToken = (this.rouletteToken || 0) + 1;
+    const result = 1+Math.floor(Math.random()*(MATCH_MODIFIERS.length-1));
+    const label = document.getElementById('roulette-result');
+    let step=0;
+    const spin=() => {
+      if (token !== this.rouletteToken) return;
+      const preview=1+Math.floor(Math.random()*(MATCH_MODIFIERS.length-1));
+      label.textContent=`🎰 ${MATCH_MODIFIERS[preview].name}`;
+      step++;
+      if (step<13) setTimeout(spin,50+step*13);
+      else {
+        this.rouletteSpinning=false;
+        game.modifierIndex=result;
+        this.optionsChanged();
+      }
+    };
+    spin();
+  },
+
+  resetRoulette() {
+    if (game.mode === 'online' && !Net.isHost) return;
+    if (this.rouletteSpinning) return;
+    game.modifierIndex=0;
+    this.optionsChanged();
+  },
+
   toggleScreen(screenId, show) {
     const el = document.getElementById(screenId);
     if (show) el.classList.remove('hidden');
@@ -2930,7 +3357,7 @@ const UI = {
 
       card.oncontextmenu = (e) => {
         e.preventDefault();
-        if (game.mode === 'local') this.selectCharacter(idx, 2);
+        if (game.mode === 'local' || game.mode === 'training') this.selectCharacter(idx, 2);
       };
 
       card.innerHTML = `
@@ -2951,6 +3378,8 @@ const UI = {
   generateHelpContent() {
     const container = document.getElementById('help-characters-content');
     container.innerHTML = '';
+    container.innerHTML += '<h3>Арены и режимы</h3><p>Есть ограниченные арены и бесконечная равнина с камерой. Матчи проходят до 1, 2 или 3 побед. В тренировке HP манекена восстанавливается, а у игрока бесконечная ПЭ и отсутствуют перезарядки.</p>';
+    container.innerHTML += '<h3>Комбо и атаки с воздуха</h3><p>Удары с промежутком до 1,2 секунды образуют комбо. Удар ногой в прыжке сильнее на 15% и дополнительно отбрасывает. Во время потоков допускается движение со скоростью 45% от обычной.</p>';
     CHARACTERS_DATA.forEach((c, idx) => {
       let html = `<h3>${idx + 1}. ${c.name} (HP: ${c.maxHp} | ПЭ: ${c.maxPe} | Скор: ${c.speed})</h3>`;
       c.skills.forEach((s, sIdx) => {
@@ -2976,10 +3405,13 @@ const UI = {
       const el = document.getElementById(`${pKey}-cd${i + 1}`);
       if (!el) continue;
       const cd = fighter.cooldowns[i];
-      if (cd > 0) {
+      if (game.modifier.noSkills) {
+        el.className = 'cd-badge';
+        el.innerText = `[${i + 1}] ЗАПРЕТ`;
+      } else if (cd > 0) {
         el.className = 'cd-badge';
         el.innerText = `[${i + 1}] ${cd.toFixed(1)}c`;
-      } else if (fighter.pe < fighter.data.skills[i].cost) {
+      } else if (!game.modifier.unlimitedPe && fighter.pe < fighter.data.skills[i].cost) {
         el.className = 'cd-badge';
         el.innerText = `[${i + 1}] МАЛО ПЭ`;
       } else {
@@ -3011,10 +3443,13 @@ const UI = {
       }
     } else if (mode === 'local') {
       document.getElementById('select-prompt').innerText = "Игрок 1 (ЛКМ) | Игрок 2 (ПКМ)";
+    } else if (mode === 'training') {
+      document.getElementById('select-prompt').innerText = 'Тренировка: выбери своего бойца и манекен';
     } else {
       document.getElementById('select-prompt').innerText = "Выберите вашего бойца";
     }
     this.renderRoster();
+    this.renderMatchOptions();
     this.updateReadyStatus();
   },
 
@@ -3030,7 +3465,7 @@ const UI = {
         Net.resetReady();
         Net.send({ type: 'SELECT_CHAR', index: idx });
       }
-    } else if (game.mode === 'local') {
+    } else if (game.mode === 'local' || game.mode === 'training') {
       if (player === 1) game.p1ChoiceIndex = idx;
       else if (player === 2) game.p2ChoiceIndex = idx;
     } else {
@@ -3042,6 +3477,7 @@ const UI = {
   },
 
   confirmSelection() {
+    if (this.rouletteSpinning) return;
     AudioSys.init();
     if (game.mode === 'online') Net.setLocalReady();
     else game.startMatch(true);
@@ -3124,6 +3560,8 @@ const UI = {
   },
 
   exitSelection() {
+    this.rouletteToken = (this.rouletteToken || 0) + 1;
+    this.rouletteSpinning = false;
     if (game.mode === 'online') this.cancelNetworkLobby();
     else {
       this.toggleScreen('screen-select', false);
